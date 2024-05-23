@@ -1,0 +1,13 @@
+.SoM {
+    position: fixed;
+    z-index: 9999;
+}
+
+.SoM > label {
+    position: absolute;
+    padding: 0 3px;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 18px;
+    white-space: nowrap;
+}
