@@ -39,16 +39,22 @@ class SoM {
     async loadElements() {
         // First, select all elements that are clickable by default, then add the ones that have an onClick event
         let elements = document.querySelectorAll(SELECTORS.join(','));
-        let onclickElements = Array.from(
-            document.querySelectorAll('*')
-        ).filter(element => element.onclick !== null ||
-            // Check if the style for cursor is pointer
-            window.getComputedStyle(element).cursor === 'pointer'
-        );
+        const allElements = document.querySelectorAll('*');
+
+        let clickableElements = [];
+        for (let i = 0; i < allElements.length; i++) {
+            if (allElements[i].onclick !== null ||
+                // Check if the style for cursor is pointer
+                window.getComputedStyle(allElements[i]).cursor === 'pointer'
+            ) {
+                clickableElements.push(allElements[i]);
+            }
+        }
 
         // Then, filter elements that are not visible, either because of style or because the window needs to be scrolled
-        elements = (await Promise.all(Array.from(elements)
-            .concat(onclickElements)
+        elements = (await Promise.all(
+            Array.from(elements)
+            .concat(clickableElements)
             .map(async (element, index) => {
                 if (element.offsetWidth === 0 && element.offsetHeight === 0) {
                     return false;
@@ -74,17 +80,13 @@ class SoM {
                     return false;
                 }
 
-                // Finally, check if it isn't behind another element by checking all corners
-                const corners = [
-                    {x: rect.left + 1, y: rect.top + 1},
-                    {x: rect.right - 1, y: rect.top + 1},
-                    {x: rect.left + 1, y: rect.bottom - 1},
-                    {x: rect.right - 1, y: rect.bottom - 1}
-                ];
-                if (corners.some(corner => {
-                    const el = document.elementFromPoint(corner.x, corner.y);
-                    return el !== null && el !== element;
-                })) {
+                // Finally, check if it isn't behind another element by checking the overall middle
+                const middle = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                }
+                const elementAtPoint = document.elementFromPoint(middle.x, middle.y);
+                if (elementAtPoint !== element) {
                     return false;
                 }
 
@@ -120,7 +122,9 @@ class SoM {
         const randomColor = () => Math.floor(Math.random() * 256);
 
         // First, define the bounding boxes
-        elements.forEach((element, index) => {
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+
             const rect = element.getBoundingClientRect();
             const div = document.createElement('div');
             div.style.left = `${rect.left}px`;
@@ -145,18 +149,19 @@ class SoM {
             });
 
             this.boxes.push(div);
-        });
+        }
 
 
-        elements.forEach((element, index) => {
-            const box = boundingBoxes[index];
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            const box = boundingBoxes[i];
 
             const label = document.createElement('label');
-            label.textContent = index;
+            label.textContent = i;
             label.style.color = this.colorFromLuminance(box.color);
             label.style.backgroundColor = `rgba(${box.color.join(',')}, 0.7)`;
 
-            this.boxes[index].appendChild(label);
+            this.boxes[i].appendChild(label);
 
             const labelRect = label.getBoundingClientRect();
 
@@ -214,8 +219,8 @@ class SoM {
                 height: labelRect.height
             });
 
-            element.setAttribute('data-SoM', index);
-        });
+            element.setAttribute('data-SoM', i);
+        }
     }
 
     hide() {
