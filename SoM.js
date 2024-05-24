@@ -36,12 +36,12 @@ class SoM {
         return luminance > 0.5 ? 'black' : 'white';
     }
 
-    async loadElements() {
+    loadElements() {
         // First, select all elements that are clickable by default, then add the ones that have an onClick event
-        let elements = document.querySelectorAll(SELECTORS.join(','));
+        const preselectedElements = document.querySelectorAll(SELECTORS.join(','));
         const allElements = document.querySelectorAll('*');
 
-        let clickableElements = [];
+        const clickableElements = [];
         for (let i = 0; i < allElements.length; i++) {
             if (allElements[i].onclick !== null ||
                 // Check if the style for cursor is pointer
@@ -52,50 +52,81 @@ class SoM {
         }
 
         // Then, filter elements that are not visible, either because of style or because the window needs to be scrolled
-        elements = (await Promise.all(
-            Array.from(elements)
+        const fullElements = Array
+            .from(preselectedElements)
             .concat(clickableElements)
-            .map(async (element, index) => {
-                if (element.offsetWidth === 0 && element.offsetHeight === 0) {
-                    return false;
-                }
-                const style = window.getComputedStyle(element);
-                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                    return false;
-                }
+            .filter((element, index, self) => self.indexOf(element) === index);
 
-                // Check if any of the element's parents are hidden
-                let parent = element.parentElement;
-                while (parent !== null) {
-                    const parentStyle = window.getComputedStyle(parent);
-                    if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden' || parentStyle.opacity === '0') {
-                        return false;
-                    }
-                    parent = parent.parentElement;
-                }
+        const elements = [];
+        for (let i = 0; i < fullElements.length; i++) {
+            const element = fullElements[i];
+            if (element.offsetWidth === 0 && element.offsetHeight === 0) {
+                continue;
+            }
 
-                // Check if the element is in the viewport
-                const rect = element.getBoundingClientRect();
-                if (rect.top >= window.innerHeight || rect.bottom <= 0 || rect.left >= window.innerWidth || rect.right <= 0) {
-                    return false;
-                }
+            const style = window.getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden') {
+                continue;
+            }
 
-                // Finally, check if it isn't behind another element by checking the overall middle
-                const middle = {
-                    x: rect.left + rect.width / 2,
-                    y: rect.top + rect.height / 2
+            // Check if any of the element's parents are hidden
+            let parent = element.parentElement; let passed = true;
+            while (parent !== null) {
+                const parentStyle = window.getComputedStyle(parent);
+                if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden') {
+                    passed = false
+                    break;
                 }
-                const elementAtPoint = document.elementFromPoint(middle.x, middle.y);
-                if (elementAtPoint !== element) {
-                    return false;
-                }
+                parent = parent.parentElement;
+            }
+            if (!passed) {
+                continue;
+            }
 
-                return element;
-            })))
-            .filter((element, index, self) => element && self.indexOf(element) === index);
+            // Check if the element is in the viewport
+            const rect = element.getBoundingClientRect();
+            if (rect.top >= window.innerHeight || rect.bottom <= 0 || rect.left >= window.innerWidth || rect.right <= 0) {
+                continue;
+            }
+
+            // Finally, check if it isn't behind another element, by checking the corners of the element
+            // Remove a bit from each corner to make them inside the element
+            const corners = [
+                {x: rect.left, y: rect.top},
+                {x: rect.right, y: rect.top},
+                {x: rect.left, y: rect.bottom},
+                {x: rect.right, y: rect.bottom}
+            ];
+            const middle = [
+                {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2},
+                {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2}
+            ]
+
+            // Make the corner points a bit closer to the middle
+            const closenessRatio = 6; // 1/closenessRatio of the distance between the corner and the middle
+            corners.forEach(corner => {
+                corner.x = corner.x + (middle[0].x - corner.x) / closenessRatio;
+                corner.y = corner.y + (middle[0].y - corner.y) / closenessRatio;
+            });
+
+            passed = true;
+            for (let j = 0; j < corners.length; j++) {
+                const corner = corners[j];
+                const elementBehind = document.elementFromPoint(corner.x, corner.y);
+                if (elementBehind !== element) {
+                    passed = false;
+                    break;
+                }
+            }
+            if (!passed) {
+                continue;
+            }
+
+            elements.push(element);
+        }
 
         // Now, filter elements so that we only keep the ones that are not inside another clickable element
-        elements = elements.filter(element => {
+        return elements.filter(element => {
             let parent = element.parentElement;
             while (parent !== null) {
                 if (elements.includes(parent)) {
@@ -105,14 +136,12 @@ class SoM {
             }
             return true
         });
-
-        return elements;
     }
 
-    async display() {
+    display() {
         this.clear();
 
-        const elements = await this.loadElements();
+        const elements = this.loadElements();
 
         const labels = [];
         const boundingBoxes = [];
