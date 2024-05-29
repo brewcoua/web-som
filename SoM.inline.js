@@ -43,17 +43,12 @@ class SoM {
   }
 
   async isElementVisible(element) {
-    const isDebug = element.innerHTML.trim() === "Supprimer l'historique";
 
     // Use IntersectionObserver to check if the element is visible
     return new Promise((resolve) => {
       const observer = new IntersectionObserver((entries) => {
         const entry = entries[0];
         observer.disconnect();
-
-        if (isDebug) {
-            console.log(entry, entry.intersectionRatio >= VISIBILITY_RATIO);
-        }
         resolve(entry.intersectionRatio >= VISIBILITY_RATIO);
       });
       observer.observe(element);
