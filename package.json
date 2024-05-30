@@ -1,0 +1,28 @@
+{
+  "name": "web-som",
+  "version": "1.0.0",
+  "description": "Set-of-Marks script for web grounding, used for web agent automation",
+  "main": "dist/SoM.js",
+  "license": "(MIT OR Apache-2.0)",
+  "author": {
+    "name": "Brewen Couaran",
+    "email": "contact@brewen.dev",
+    "url": "https://brewen.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:brewcoua/web-som.git"
+  },
+  "homepage": "https://github.com/brewcoua/web-som#readme",
+  "bugs": {
+    "url": "https://github.com/brewcoua/web-som/issues",
+    "email": "contact@brewen.dev"
+  },
+  "scripts": {
+    "build": "bun ./build.ts"
+  },
+  "devDependencies": {
+    "clean-css": "^5.3.3",
+    "prettier": "^3.2.5"
+  }
+}
