@@ -4,6 +4,17 @@ A Set-of-Marks script for web grounding, suitable for web agent automation.
 When using this script, the web page should not have any animations or dynamic content that could interfere with the
 script's operation.
 
+## Usage
+
+Include both the script (`SoM.js` or `SoM.min.js`) and the style (`SoM.css` or `SoM.min.css`) in the web page.
+You can then use the `SoM` object in the `window` object to interact with the script.
+
+### Example
+
+```js
+window.SoM.display().then(() => console.log("Set-of-Marks displayed"));
+```
+
 ## License
 
 This project is licensed under either of the following, at your option:
