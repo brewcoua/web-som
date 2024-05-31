@@ -18,9 +18,8 @@ export async function loadElements() {
 
   const fullElements = Array.from(preselectedElements)
     .concat(clickableElements)
-    .filter(
-      (element, index, self) => self.indexOf(element) === index
-    ) as HTMLElement[];
+    .filter((element, index, self) => self.indexOf(element) === index)
+    .filter((element) => !element.closest("svg")) as HTMLElement[];
 
   const elements = await filterVisibleElements(fullElements);
   return await filterNestedElements(elements);

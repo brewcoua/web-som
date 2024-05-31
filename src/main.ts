@@ -6,7 +6,6 @@ class SoM {
     this.clear();
 
     const elements = await loadElements();
-
     displayBoxes(elements);
   }
 
@@ -33,6 +32,10 @@ class SoM {
       .forEach(
         (element: Element) => ((element as HTMLElement).style.display = "block")
       );
+  }
+
+  resolve(id: number) {
+    return document.querySelector(`[data-som="${id}"]`);
   }
 }
 

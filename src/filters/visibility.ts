@@ -15,8 +15,14 @@ export async function filterVisibleElements(
         return null;
       }
 
+      const isDebug = element.id === "company-name";
+
       const style = window.getComputedStyle(element);
-      if (style.display === "none" || style.visibility === "hidden") {
+      if (
+        style.display === "none" ||
+        style.visibility === "hidden" ||
+        style.pointerEvents === "none"
+      ) {
         return null;
       }
 
@@ -27,7 +33,8 @@ export async function filterVisibleElements(
         const parentStyle = window.getComputedStyle(parent);
         if (
           parentStyle.display === "none" ||
-          parentStyle.visibility === "hidden"
+          parentStyle.visibility === "hidden" ||
+          parentStyle.pointerEvents === "none"
         ) {
           passed = false;
           break;
@@ -179,6 +186,11 @@ async function calculateVisibleAreaRatio(element: HTMLElement, rect: DOMRect) {
           rect.top + rect.height * ELEMENT_SAMPLING_RATE * i
         );
 
+        // Make sure the current element is included (point may miss if the element is not rectangular)
+        if (!elements.includes(element)) {
+          return [];
+        }
+
         const currentIndex = elements.indexOf(element);
 
         return elements.slice(0, currentIndex);
@@ -199,7 +211,6 @@ async function calculateVisibleAreaRatio(element: HTMLElement, rect: DOMRect) {
       continue;
     }
 
-    // Remove anything that has a direct relationship with the element (parents, children, etc.)
     if (el.contains(element) || element.contains(el)) {
       continue;
     }

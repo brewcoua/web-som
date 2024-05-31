@@ -37,15 +37,16 @@ async function filterVisibleElements(elements) {
     if (element.offsetWidth === 0 && element.offsetHeight === 0) {
       return null;
     }
+    const isDebug = element.id === "company-name";
     const style = window.getComputedStyle(element);
-    if (style.display === "none" || style.visibility === "hidden") {
+    if (style.display === "none" || style.visibility === "hidden" || style.pointerEvents === "none") {
       return null;
     }
     let parent = element.parentElement;
     let passed = true;
     while (parent !== null) {
       const parentStyle = window.getComputedStyle(parent);
-      if (parentStyle.display === "none" || parentStyle.visibility === "hidden") {
+      if (parentStyle.display === "none" || parentStyle.visibility === "hidden" || parentStyle.pointerEvents === "none") {
         passed = false;
         break;
       }
@@ -127,6 +128,9 @@ async function calculateVisibleAreaRatio(element, rect) {
   const totalPixels = countVisiblePixels();
   const foundElements = await Promise.all(Array.from({ length: Math.ceil(1 / ELEMENT_SAMPLING_RATE) }).map(async (_, i) => {
     const elements2 = document.elementsFromPoint(rect.left + rect.width * ELEMENT_SAMPLING_RATE * i, rect.top + rect.height * ELEMENT_SAMPLING_RATE * i);
+    if (!elements2.includes(element)) {
+      return [];
+    }
     const currentIndex = elements2.indexOf(element);
     return elements2.slice(0, currentIndex);
   }));
@@ -220,7 +224,7 @@ async function loadElements() {
       clickableElements.push(allElements[i]);
     }
   }
-  const fullElements = Array.from(preselectedElements).concat(clickableElements).filter((element, index, self) => self.indexOf(element) === index);
+  const fullElements = Array.from(preselectedElements).concat(clickableElements).filter((element, index, self) => self.indexOf(element) === index).filter((element) => !element.closest("svg"));
   const elements = await filterVisibleElements(fullElements);
   return await filterNestedElements(elements);
 }
@@ -340,6 +344,9 @@ class SoM {
   }
   show() {
     document.querySelectorAll(".SoM").forEach((element) => element.style.display = "block");
+  }
+  resolve(id) {
+    return document.querySelector(`[data-som="${id}"]`);
   }
 }
 window.SoM = new SoM;
