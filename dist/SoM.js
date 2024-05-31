@@ -201,19 +201,40 @@ var drawElementOnCanvas = function(element, ctx, rect, baseRect, color = "black"
   ctx.fill(path);
 };
 // src/filters/nesting.ts
-async function filterNestedElements(elements) {
-  const filteredElements = await Promise.all(elements.map(async (element) => {
-    let parent = element.parentElement;
-    while (parent !== null) {
-      if (elements.includes(parent)) {
-        return null;
-      }
-      parent = parent.parentElement;
+function filterNestedElements(elements) {
+  const topLevelElements = [], nonTopLevelElements = [];
+  for (const element of elements) {
+    if (!elements.some((otherElement) => otherElement !== element && otherElement.contains(element))) {
+      topLevelElements.push(element);
+    } else {
+      nonTopLevelElements.push(element);
     }
-    return element;
-  }));
-  return filteredElements.filter((element) => element !== null);
+  }
+  return topLevelElements.flatMap((element) => getSelfOrChildren(element, nonTopLevelElements));
 }
+var getSelfOrChildren = function(element, elements) {
+  const branches = getBranches(element, elements);
+  if (branches.length <= 1) {
+    return [element];
+  }
+  return branches.flatMap((branch) => {
+    if (branch.directChild) {
+      return getSelfOrChildren(branch.directChild, elements);
+    }
+    return filterNestedElements(branch.children);
+  });
+};
+var getBranches = function(element, elements) {
+  const directChildren = element.querySelectorAll(":scope > *");
+  return Array.from(directChildren).map((directChild) => {
+    const children = elements.filter((child) => child !== directChild && directChild.contains(child));
+    const isDirectClickable = elements.includes(directChild);
+    return {
+      directChild: isDirectClickable ? directChild : undefined,
+      children
+    };
+  });
+};
 // src/loader.ts
 async function loadElements() {
   const preselectedElements = document.querySelectorAll(SELECTORS.join(","));
@@ -327,9 +348,12 @@ var colorFromLuminance = function(color) {
 // src/main.ts
 class SoM {
   async display() {
+    this.log("Displaying...");
+    const startTime = performance.now();
     this.clear();
     const elements = await loadElements();
     displayBoxes(elements);
+    this.log("Done!", `Took ${performance.now() - startTime}ms to display ${elements.length} elements.`);
   }
   clear() {
     document.querySelectorAll(".SoM").forEach((element) => {
@@ -348,5 +372,9 @@ class SoM {
   resolve(id) {
     return document.querySelector(`[data-som="${id}"]`);
   }
+  log(...args) {
+    console.log("%cSoM", "color: white; background: #007bff; padding: 2px 5px; border-radius: 5px;", ...args);
+  }
 }
 window.SoM = new SoM;
+window.SoM.log("Ready!");

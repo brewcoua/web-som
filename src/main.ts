@@ -3,10 +3,17 @@ import { displayBoxes } from "./ui";
 
 class SoM {
   async display() {
+    this.log("Displaying...");
+    const startTime = performance.now();
     this.clear();
 
     const elements = await loadElements();
     displayBoxes(elements);
+
+    this.log(
+      "Done!",
+      `Took ${performance.now() - startTime}ms to display ${elements.length} elements.`
+    );
   }
 
   clear() {
@@ -37,6 +44,15 @@ class SoM {
   resolve(id: number) {
     return document.querySelector(`[data-som="${id}"]`);
   }
+
+  log(...args: any[]) {
+    console.log(
+      "%cSoM",
+      "color: white; background: #007bff; padding: 2px 5px; border-radius: 5px;",
+      ...args
+    );
+  }
 }
 
 window.SoM = new SoM();
+window.SoM.log("Ready!");
