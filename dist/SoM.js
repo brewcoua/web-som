@@ -498,7 +498,12 @@ if (!document.getElementById("SoM-styles")) {
   const styleElement = document.createElement("style");
   styleElement.id = "SoM-styles";
   styleElement.innerHTML = style_default;
-  document.head.appendChild(styleElement);
+  const interval = setInterval(() => {
+    if (document.head) {
+      clearInterval(interval);
+      document.head.appendChild(styleElement);
+    }
+  }, 100);
 }
 window.SoM = new SoM;
 window.SoM.log("Ready!");
