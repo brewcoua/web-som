@@ -57,5 +57,11 @@ class SoM {
   }
 }
 
+declare global {
+  interface Window {
+    SoM: SoM;
+  }
+}
+
 window.SoM = new SoM();
 window.SoM.log("Ready!");
