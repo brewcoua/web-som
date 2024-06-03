@@ -1,43 +1,42 @@
 import CleanCSS from "clean-css";
 import { renameSync, rmSync } from "fs";
-import { exec } from "child_process";
+import type { BunPlugin } from "bun";
+
+const InlineStylePlugin: BunPlugin = {
+  name: "inline-style",
+  setup(build) {
+    // Bundle CSS files as text
+    build.onLoad({ filter: /\.css$/ }, async (args) => {
+      const value = await Bun.file(args.path).text();
+      const minified = new CleanCSS().minify(value);
+
+      return {
+        contents: minified.styles,
+        loader: "text",
+      };
+    });
+  },
+};
 
 async function main() {
   process.env.FORCE_COLOR = "1";
 
-  // Clear dist
   rmSync("dist", { recursive: true, force: true });
 
-  // Build non-minified SoM.js
-  exec(
-    "bun build ./src/main.ts --outfile ./dist/SoM.js",
-    (err, stdout, stderr) => {
-      if (err) {
-        console.error(stderr);
-        return;
-      }
-      console.log(stdout);
-    }
-  );
+  await Bun.build({
+    entrypoints: ["./src/main.ts"],
+    outdir: "./dist",
+    plugins: [InlineStylePlugin],
+  });
+  renameSync("./dist/main.js", "./dist/SoM.js");
 
-  // Build minified SoM.min.js
-  exec(
-    "bun build ./src/main.ts --outfile ./dist/SoM.min.js --minify",
-    (err, stdout, stderr) => {
-      if (err) {
-        console.error(stderr);
-        return;
-      }
-      console.log(stdout);
-    }
-  );
-
-  // Copy style.css to dist and minify it
-  const css = await Bun.file("./src/style.css").text();
-  await Bun.write("dist/SoM.css", css);
-
-  const minified = new CleanCSS().minify(css);
-  await Bun.write("dist/SoM.min.css", minified.styles);
+  await Bun.build({
+    entrypoints: ["./src/main.ts"],
+    outdir: "./dist",
+    plugins: [InlineStylePlugin],
+    minify: true,
+  });
+  renameSync("./dist/main.js", "./dist/SoM.min.js");
 }
 
 main().catch(console.error);

@@ -458,6 +458,9 @@ class UI {
   }
 }
 
+// src/style.css
+var style_default = ".SoM{position:fixed;z-index:2147483646;pointer-events:none}.SoM>label{position:absolute;padding:0 3px;font-size:1rem;font-weight:700;line-height:1.2rem;white-space:nowrap;font-family:\"Courier New\",Courier,monospace}";
+
 // src/main.ts
 class SoM {
   loader = new Loader;
@@ -490,6 +493,12 @@ class SoM {
   log(...args) {
     console.log("%cSoM", "color: white; background: #007bff; padding: 2px 5px; border-radius: 5px;", ...args);
   }
+}
+if (!document.getElementById("SoM-styles")) {
+  const styleElement = document.createElement("style");
+  styleElement.id = "SoM-styles";
+  styleElement.innerHTML = style_default;
+  document.head.appendChild(styleElement);
 }
 window.SoM = new SoM;
 window.SoM.log("Ready!");

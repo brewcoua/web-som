@@ -1,5 +1,7 @@
 import Loader from "./loader";
 import UI from "./ui";
+// @ts-ignore
+import style from "./style.css";
 
 class SoM {
   private readonly loader = new Loader();
@@ -61,6 +63,14 @@ declare global {
   interface Window {
     SoM: SoM;
   }
+}
+
+// Load styles
+if (!document.getElementById("SoM-styles")) {
+  const styleElement = document.createElement("style");
+  styleElement.id = "SoM-styles";
+  styleElement.innerHTML = style;
+  document.head.appendChild(styleElement);
 }
 
 window.SoM = new SoM();
