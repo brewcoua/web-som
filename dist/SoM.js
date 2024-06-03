@@ -28,6 +28,23 @@ var SELECTORS = [
   '[role="slider"]',
   '[role="spinbutton"]'
 ];
+var EDITABLE_SELECTORS = [
+  'input[type="text"]',
+  'input[type="password"]',
+  'input[type="email"]',
+  'input[type="tel"]',
+  'input[type="number"]',
+  'input[type="search"]',
+  'input[type="url"]',
+  'input[type="date"]',
+  'input[type="time"]',
+  'input[type="datetime-local"]',
+  'input[type="month"]',
+  'input[type="week"]',
+  'input[type="color"]',
+  "textarea",
+  '[contenteditable="true"]'
+];
 var VISIBILITY_RATIO = 0.6;
 var ELEMENT_SAMPLING_RATE = 0.1;
 
@@ -377,12 +394,15 @@ class UI {
       div.style.width = `${rect.width}px`;
       div.style.height = `${rect.height}px`;
       div.classList.add("SoM");
+      if (element.isContentEditable || EDITABLE_SELECTORS.some((selector) => element.matches(selector))) {
+        div.classList.add("editable");
+      }
       const color = [
         randomColor(),
         randomColor(),
         randomColor()
       ];
-      div.style.backgroundColor = `rgba(${color.join(",")}, 0.3)`;
+      div.style.setProperty("--SoM-color", `${color[0]}, ${color[1]}, ${color[2]}`);
       document.body.appendChild(div);
       boundingBoxes.push({
         top: rect.top,
@@ -401,7 +421,6 @@ class UI {
       const label = document.createElement("label");
       label.textContent = `${i}`;
       label.style.color = this.colorFromLuminance(box.color);
-      label.style.backgroundColor = `rgba(${box.color.join(",")}, 0.5)`;
       rawBoxes[i].appendChild(label);
       const labelRect = label.getBoundingClientRect();
       const gridSize = 10;
@@ -459,7 +478,7 @@ class UI {
 }
 
 // src/style.css
-var style_default = ".SoM{position:fixed;z-index:2147483646;pointer-events:none}.SoM>label{position:absolute;padding:0 3px;font-size:1rem;font-weight:700;line-height:1.2rem;white-space:nowrap;font-family:\"Courier New\",Courier,monospace}";
+var style_default = ".SoM{position:fixed;z-index:2147483646;pointer-events:none;background-color:rgba(var(--SoM-color),.3)}.SoM.editable{background:repeating-linear-gradient(45deg,rgba(var(--SoM-color),.1),rgba(var(--SoM-color),.1) 10px,rgba(var(--SoM-color),.3) 10px,rgba(var(--SoM-color),.3) 20px)}.SoM>label{position:absolute;padding:0 3px;font-size:1rem;font-weight:700;line-height:1.2rem;white-space:nowrap;font-family:\"Courier New\",Courier,monospace;background-color:rgba(var(--SoM-color),.7)}";
 
 // src/main.ts
 class SoM {

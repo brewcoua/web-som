@@ -2,6 +2,18 @@
   position: fixed;
   z-index: 2147483646;
   pointer-events: none;
+  background-color: rgba(var(--SoM-color), 0.3);
+}
+
+.SoM.editable {
+  /* Apply stripes effect to display that the element is editable, while keeping the same colors */
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(var(--SoM-color), 0.1),
+    rgba(var(--SoM-color), 0.1) 10px,
+    rgba(var(--SoM-color), 0.3) 10px,
+    rgba(var(--SoM-color), 0.3) 20px
+  );
 }
 
 .SoM > label {
@@ -12,4 +24,5 @@
   line-height: 1.2rem;
   white-space: nowrap;
   font-family: "Courier New", Courier, monospace;
+  background-color: rgba(var(--SoM-color), 0.7);
 }

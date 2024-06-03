@@ -29,6 +29,24 @@ export const SELECTORS = [
   '[role="spinbutton"]',
 ];
 
+export const EDITABLE_SELECTORS = [
+  'input[type="text"]',
+  'input[type="password"]',
+  'input[type="email"]',
+  'input[type="tel"]',
+  'input[type="number"]',
+  'input[type="search"]',
+  'input[type="url"]',
+  'input[type="date"]',
+  'input[type="time"]',
+  'input[type="datetime-local"]',
+  'input[type="month"]',
+  'input[type="week"]',
+  'input[type="color"]',
+  "textarea",
+  '[contenteditable="true"]',
+];
+
 // Required visibility ratio for an element to be considered visible
 export const VISIBILITY_RATIO = 0.6;
 

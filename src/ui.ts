@@ -1,3 +1,5 @@
+import { EDITABLE_SELECTORS } from "./constants";
+
 type SimpleDOMRect = {
   top: number;
   bottom: number;
@@ -29,12 +31,27 @@ export default class UI {
       div.style.height = `${rect.height}px`;
       div.classList.add("SoM");
 
+      // If the element is editable, add additional class
+      if (
+        element.isContentEditable ||
+        EDITABLE_SELECTORS.some((selector) =>
+          element.matches(selector as string)
+        )
+      ) {
+        div.classList.add("editable");
+      }
+
       const color: [number, number, number] = [
         randomColor(),
         randomColor(),
         randomColor(),
       ];
-      div.style.backgroundColor = `rgba(${color.join(",")}, 0.3)`;
+
+      // Set color as variable to be used in CSS
+      div.style.setProperty(
+        "--SoM-color",
+        `${color[0]}, ${color[1]}, ${color[2]}`
+      );
 
       document.body.appendChild(div);
 
@@ -58,7 +75,6 @@ export default class UI {
       const label = document.createElement("label");
       label.textContent = `${i}`;
       label.style.color = this.colorFromLuminance(box.color);
-      label.style.backgroundColor = `rgba(${box.color.join(",")}, 0.5)`;
 
       rawBoxes[i].appendChild(label);
 
