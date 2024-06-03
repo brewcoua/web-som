@@ -4,6 +4,7 @@ import { Filter } from "../domain/filter";
 const SIZE_THRESHOLD = 0.9;
 // Threshold to remove top-level elements with too many children
 const QUANTITY_THRESHOLD = 3;
+// Elements to prioritize (as in to to avoid keeping any children from these elements)
 const PRIORITY_SELECTOR = ["a", "button", "input", "select", "textarea"];
 
 class NestingFilter extends Filter {
