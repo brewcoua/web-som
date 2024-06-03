@@ -1,78 +1,130 @@
-/*
- * This filter removes elements that are nested within other elements in the array.
- * In the case that a parent element has multiple children in the array (branching from the same point, multiple elements after that point only count as one),
- * the parent element is removed while the children are kept.
- * This should be relatively recursive.
- * @param elements The elements to filter
- * @returns The elements that are not nested within other elements
- */
-export function filterNestedElements(elements: HTMLElement[]): HTMLElement[] {
-  // First of, we map out the parent-child relationships by layering the elements
-  // HOWEVER, the relative distance in HTML should be kept.
-  // Meaning, a child that is 2 elements away from the parent should NOT be in the same layer as the actual direct child.
+import { Filter } from "../domain/filter";
 
-  // First we will list all top-level elements (elements that have no known clickable parent)
-  const topLevelElements: HTMLElement[] = [],
-    nonTopLevelElements: HTMLElement[] = [];
-  for (const element of elements) {
-    if (
-      !elements.some(
-        (otherElement) =>
-          otherElement !== element && otherElement.contains(element)
+// Threshold to be considered disjoint from the top-level element
+const SIZE_THRESHOLD = 0.9;
+// Threshold to remove top-level elements with too many children
+const QUANTITY_THRESHOLD = 3;
+const PRIORITY_SELECTOR = ["a", "button", "input", "select", "textarea"];
+
+class NestingFilter extends Filter {
+  async apply(elements: HTMLElement[]): Promise<HTMLElement[]> {
+    // Basically, what we want to do it is compare the size of the top-level elements with the size of their children.
+    // For that, we make branches and compare with the first children of each of these branches.
+    // If there are other children beyond that, we'll recursively call this function on them.
+    const { top, others } = this.getTopLevelElements(elements);
+
+    const results = await Promise.all(
+      top.map(async (topElement) =>
+        this.compareTopWithChildren(topElement, others)
       )
-    ) {
-      topLevelElements.push(element);
-    } else {
-      nonTopLevelElements.push(element);
-    }
-  }
-
-  return topLevelElements.flatMap((element) =>
-    getSelfOrChildren(element, nonTopLevelElements)
-  );
-}
-
-type Branch = {
-  directChild?: HTMLElement;
-  children: HTMLElement[];
-};
-
-function getSelfOrChildren(
-  element: HTMLElement,
-  elements: HTMLElement[]
-): HTMLElement[] {
-  const branches = getBranches(element, elements);
-
-  if (branches.length <= 1) {
-    return [element];
-  }
-
-  return branches.flatMap((branch) => {
-    if (branch.directChild) {
-      return getSelfOrChildren(branch.directChild, elements);
-    }
-
-    return filterNestedElements(branch.children);
-  });
-}
-
-function getBranches(element: HTMLElement, elements: HTMLElement[]): Branch[] {
-  // We'll basically map out the direct childrens of that element.
-  const directChildren = element.querySelectorAll(":scope > *");
-
-  // Then, go through all of them to find which clickable element they belong to.
-  return Array.from(directChildren).map((directChild) => {
-    // Now, find all clickable elements that are children of the direct child.
-    const children = elements.filter(
-      (child) => child !== directChild && directChild.contains(child)
     );
 
-    const isDirectClickable = elements.includes(directChild as HTMLElement);
+    return results.flat();
+  }
 
-    // Add the direct child and the children to the branches.
-    return {
-      directChild: isDirectClickable ? (directChild as HTMLElement) : undefined,
-      children: children as HTMLElement[],
-    };
-  });
+  async compareTopWithChildren(top: HTMLElement, children: HTMLElement[]) {
+    if (PRIORITY_SELECTOR.some((selector) => top.matches(selector))) {
+      return [top];
+    }
+
+    const branches = this.getBranches(top, children);
+    const rect = top.getBoundingClientRect();
+
+    if (branches.length <= 1) {
+      return [top];
+    }
+
+    const results = await Promise.all(
+      branches.map(async (branch: Branch) => {
+        // Let's compare the size of the top-level element with the size of the first hit
+        const firstHitRect = branch.top.getBoundingClientRect();
+
+        // If the difference in size is too big, we'll consider them disjoint.
+        // If that's the case, then we recursively call this function on the children.
+        if (
+          firstHitRect.width / rect.width < SIZE_THRESHOLD &&
+          firstHitRect.height / rect.height < SIZE_THRESHOLD
+        ) {
+          return [];
+        }
+
+        if (branch.children.length === 0) {
+          return [branch.top];
+        }
+
+        return await this.compareTopWithChildren(branch.top, branch.children);
+      })
+    );
+
+    const total = results.flat();
+
+    if (total.length > QUANTITY_THRESHOLD) {
+      return total;
+    }
+
+    return [top, ...total];
+  }
+
+  getBranches(element: HTMLElement, elements: HTMLElement[]): Branch[] {
+    const firstHits = this.getFirstHitChildren(element, elements);
+
+    return firstHits.map((firstHit) => {
+      const children = elements.filter(
+        (child) => !firstHits.includes(child) && firstHit.contains(child)
+      );
+
+      return { top: firstHit, children };
+    });
+  }
+
+  getFirstHitChildren(
+    element: HTMLElement,
+    elements: HTMLElement[]
+  ): HTMLElement[] {
+    // We'll basically map out the direct childrens of that element.
+    // We'll continue doing this recursively until we get a hit.
+    // If there's more than one hit, just make a list of them.
+    const directChildren = element.querySelectorAll(":scope > *");
+
+    const clickableDirectChildren = Array.from(directChildren).filter((child) =>
+      elements.includes(child as HTMLElement)
+    ) as HTMLElement[];
+
+    if (clickableDirectChildren.length > 0) {
+      return clickableDirectChildren;
+    }
+
+    return Array.from(directChildren).flatMap((child) =>
+      this.getFirstHitChildren(child as HTMLElement, elements)
+    );
+  }
+
+  getTopLevelElements(elements: HTMLElement[]): {
+    top: HTMLElement[];
+    others: HTMLElement[];
+  } {
+    const topLevelElements: HTMLElement[] = [],
+      nonTopLevelElements: HTMLElement[] = [];
+    for (const element of elements) {
+      if (
+        !elements.some(
+          (otherElement) =>
+            otherElement !== element && otherElement.contains(element)
+        )
+      ) {
+        topLevelElements.push(element);
+      } else {
+        nonTopLevelElements.push(element);
+      }
+    }
+
+    return { top: topLevelElements, others: nonTopLevelElements };
+  }
 }
+
+export default NestingFilter;
+
+type Branch = {
+  top: HTMLElement; // First hit element
+  children: HTMLElement[];
+};

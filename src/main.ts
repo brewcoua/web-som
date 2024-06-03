@@ -1,14 +1,17 @@
-import { loadElements } from "./loader";
-import { displayBoxes } from "./ui";
+import Loader from "./loader";
+import UI from "./ui";
 
 class SoM {
+  private readonly loader = new Loader();
+  private readonly ui = new UI();
+
   async display() {
     this.log("Displaying...");
     const startTime = performance.now();
-    this.clear();
 
-    const elements = await loadElements();
-    displayBoxes(elements);
+    const elements = await this.loader.loadElements();
+    this.clear();
+    this.ui.display(elements);
 
     this.log(
       "Done!",

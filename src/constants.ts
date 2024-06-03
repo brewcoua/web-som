@@ -1,7 +1,7 @@
 // Selectors for preselecting elements to be checked
 export const SELECTORS = [
-  "a[href]:not(:has(img))",
-  "a[href] img",
+  "a:not(:has(img))",
+  "a img",
   "button",
   'input:not([type="hidden"])',
   "select",

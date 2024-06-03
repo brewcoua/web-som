@@ -1,2 +1,2 @@
-export { filterVisibleElements } from "./visibility";
-export { filterNestedElements } from "./nesting";
+export { default as VisibilityFilter } from "./visibility";
+export { default as NestingFilter } from "./nesting";
