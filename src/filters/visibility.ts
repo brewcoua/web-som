@@ -134,31 +134,67 @@ class VisibilityFilter extends Filter {
       height: canvas.height,
     });
 
+    const elements = await this.getIntersectingElements(element);
+
+    // Then, we draw all the intersecting elements on our canvas
+    await Promise.all(
+      elements.map(async (el) => {
+        const elRect = el.getBoundingClientRect();
+
+        // Try drawing it on the canvas
+        this.drawElement(el, ctx, elRect, rect, "black");
+      })
+    );
+
+    // Finally, calculate the visible pixels after drawing all the elements
+    const visiblePixels = this.countVisiblePixels(ctx, {
+      top: visibleRect.top - rect.top,
+      left: visibleRect.left - rect.left,
+      width: visibleRect.width,
+      height: visibleRect.height,
+    });
+
+    canvas.remove();
+
+    // Prevent NaN
+    if (totalPixels === 0) {
+      return 0;
+    }
+
+    return visiblePixels / totalPixels;
+  }
+
+  async getIntersectingElements(element: HTMLElement) {
+    const elementZIndex = parseInt(
+      window.getComputedStyle(element).zIndex || "0",
+      10
+    );
+
+    const rect = element.getBoundingClientRect();
+
     // Find all elements that can possibly intersect with the element
     // For this, we make a simple grid of points following ELEMENT_SAMPLING_RATE and check at each of those points
     // Hence, we end up with (1 / ELEMENT_SAMPLING_RATE) ^ 2 points (or less if the element is too small)
     const foundElements = await Promise.all(
       Array.from({ length: Math.ceil(1 / ELEMENT_SAMPLING_RATE) }).map(
         async (_, i) => {
-          return Promise.all(
-            Array.from({ length: Math.ceil(1 / ELEMENT_SAMPLING_RATE) }).map(
-              async (_, j) => {
-                const elements = document.elementsFromPoint(
-                  rect.left + rect.width * ELEMENT_SAMPLING_RATE * i,
-                  rect.top + rect.height * ELEMENT_SAMPLING_RATE * j
-                );
+          return Array.from({
+            length: Math.ceil(1 / ELEMENT_SAMPLING_RATE),
+          }).map((_, j) => {
+            const elements = document.elementsFromPoint(
+              rect.left + rect.width * ELEMENT_SAMPLING_RATE * i,
+              rect.top + rect.height * ELEMENT_SAMPLING_RATE * j
+            );
 
-                // Make sure the current element is included (point may miss if the element is not rectangular)
-                if (!elements.includes(element)) {
-                  return [];
-                }
+            // Make sure the current element is included (point may miss if the element is not rectangular)
+            if (!elements.includes(element)) {
+              return [];
+            }
 
-                const currentIndex = elements.indexOf(element);
+            const currentIndex = elements.indexOf(element);
 
-                return elements.slice(0, currentIndex);
-              }
-            )
-          );
+            return elements.slice(0, currentIndex);
+          });
         }
       )
     );
@@ -193,32 +229,7 @@ class VisibilityFilter extends Filter {
       return true;
     });
 
-    // Then, we draw all the intersecting elements on our canvas
-    await Promise.all(
-      elements.map(async (el) => {
-        const elRect = el.getBoundingClientRect();
-
-        // Try drawing it on the canvas
-        this.drawElement(el, ctx, elRect, rect, "black");
-      })
-    );
-
-    // Finally, calculate the visible pixels after drawing all the elements
-    const visiblePixels = this.countVisiblePixels(ctx, {
-      top: visibleRect.top - rect.top,
-      left: visibleRect.left - rect.left,
-      width: visibleRect.width,
-      height: visibleRect.height,
-    });
-
-    canvas.remove();
-
-    // Prevent NaN
-    if (totalPixels === 0) {
-      return 0;
-    }
-
-    return visiblePixels / totalPixels;
+    return elements;
   }
 
   countVisiblePixels(

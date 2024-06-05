@@ -53,4 +53,4 @@ export const VISIBILITY_RATIO = 0.6;
 // Rate at which elements are sampled for elements on point
 // e.g. 0.1 => Make a grid and check on every point every 10% of the size of the element
 // This is used to make sure that every element that intersects with the element is checked
-export const ELEMENT_SAMPLING_RATE = 0.1;
+export const ELEMENT_SAMPLING_RATE = 0.2;

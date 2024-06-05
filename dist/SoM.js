@@ -46,7 +46,7 @@ var EDITABLE_SELECTORS = [
   '[contenteditable="true"]'
 ];
 var VISIBILITY_RATIO = 0.6;
-var ELEMENT_SAMPLING_RATE = 0.1;
+var ELEMENT_SAMPLING_RATE = 0.2;
 
 // src/domain/filter.ts
 class Filter {
@@ -141,15 +141,37 @@ class VisibilityFilter extends Filter {
       width: canvas.width,
       height: canvas.height
     });
+    const elements = await this.getIntersectingElements(element);
+    await Promise.all(elements.map(async (el) => {
+      const elRect = el.getBoundingClientRect();
+      this.drawElement(el, ctx, elRect, rect, "black");
+    }));
+    const visiblePixels = this.countVisiblePixels(ctx, {
+      top: visibleRect.top - rect.top,
+      left: visibleRect.left - rect.left,
+      width: visibleRect.width,
+      height: visibleRect.height
+    });
+    canvas.remove();
+    if (totalPixels === 0) {
+      return 0;
+    }
+    return visiblePixels / totalPixels;
+  }
+  async getIntersectingElements(element) {
+    const elementZIndex = parseInt(window.getComputedStyle(element).zIndex || "0", 10);
+    const rect = element.getBoundingClientRect();
     const foundElements = await Promise.all(Array.from({ length: Math.ceil(1 / ELEMENT_SAMPLING_RATE) }).map(async (_, i) => {
-      return Promise.all(Array.from({ length: Math.ceil(1 / ELEMENT_SAMPLING_RATE) }).map(async (_2, j) => {
+      return Array.from({
+        length: Math.ceil(1 / ELEMENT_SAMPLING_RATE)
+      }).map((_2, j) => {
         const elements2 = document.elementsFromPoint(rect.left + rect.width * ELEMENT_SAMPLING_RATE * i, rect.top + rect.height * ELEMENT_SAMPLING_RATE * j);
         if (!elements2.includes(element)) {
           return [];
         }
         const currentIndex = elements2.indexOf(element);
         return elements2.slice(0, currentIndex);
-      }));
+      });
     }));
     const uniqueElements = Array.from(new Set(foundElements.flat(2).filter((el) => el !== element)));
     let elements = [];
@@ -171,21 +193,7 @@ class VisibilityFilter extends Filter {
       }
       return true;
     });
-    await Promise.all(elements.map(async (el) => {
-      const elRect = el.getBoundingClientRect();
-      this.drawElement(el, ctx, elRect, rect, "black");
-    }));
-    const visiblePixels = this.countVisiblePixels(ctx, {
-      top: visibleRect.top - rect.top,
-      left: visibleRect.left - rect.left,
-      width: visibleRect.width,
-      height: visibleRect.height
-    });
-    canvas.remove();
-    if (totalPixels === 0) {
-      return 0;
-    }
-    return visiblePixels / totalPixels;
+    return elements;
   }
   countVisiblePixels(ctx, rect) {
     const data = ctx.getImageData(rect.left, rect.top, rect.width, rect.height).data;
