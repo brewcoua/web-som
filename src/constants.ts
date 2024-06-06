@@ -54,3 +54,12 @@ export const VISIBILITY_RATIO = 0.6;
 // e.g. 0.1 => Make a grid and check on every point every 10% of the size of the element
 // This is used to make sure that every element that intersects with the element is checked
 export const ELEMENT_SAMPLING_RATE = 0.2;
+
+// Radius within which a box is considered surrounding another box
+// This is used for generating contrasted colors
+export const SURROUNDING_RADIUS = 200;
+
+// Used when finding the right contrasted color for boxes
+export const MAX_LUMINANCE = 0.7;
+export const MIN_LUMINANCE = 0.25;
+export const MIN_SATURATION = 0.3;

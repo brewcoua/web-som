@@ -22,7 +22,11 @@
     "build": "bun ./build.ts"
   },
   "devDependencies": {
+    "@types/contrast-color": "^1.0.3",
     "clean-css": "^5.3.3",
     "prettier": "^3.2.5"
+  },
+  "dependencies": {
+    "contrast-color": "^1.0.1"
   }
 }

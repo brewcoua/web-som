@@ -1,4 +1,5 @@
-import { EDITABLE_SELECTORS } from "./constants";
+import { EDITABLE_SELECTORS, SURROUNDING_RADIUS } from "./constants";
+import UIColors, { Color } from "./ui/colors";
 
 type SimpleDOMRect = {
   top: number;
@@ -10,14 +11,14 @@ type SimpleDOMRect = {
 };
 
 export default class UI {
+  private readonly colors = new UIColors();
+
   display(elements: HTMLElement[]) {
     const labels: SimpleDOMRect[] = [];
     const boundingBoxes: (SimpleDOMRect & {
-      color: [number, number, number];
+      color: Color;
     })[] = [];
     const rawBoxes: HTMLElement[] = [];
-
-    const randomColor = () => Math.floor(Math.random() * 256);
 
     // First, define the bounding boxes
     for (let i = 0; i < elements.length; i++) {
@@ -41,16 +42,40 @@ export default class UI {
         div.classList.add("editable");
       }
 
-      const color: [number, number, number] = [
-        randomColor(),
-        randomColor(),
-        randomColor(),
-      ];
+      // To generate a color, we'll need to first get the colors of the surrounding boxes
+      const surroundingColors = boundingBoxes
+        .filter((box) => {
+          // Check if it is within SURROUNDING_RADIUS, from any of its corners
+          const distances = [
+            Math.sqrt(
+              Math.pow(rect.left - box.left, 2) +
+                Math.pow(rect.top - box.top, 2)
+            ),
+            Math.sqrt(
+              Math.pow(rect.right - box.right, 2) +
+                Math.pow(rect.top - box.top, 2)
+            ),
+            Math.sqrt(
+              Math.pow(rect.left - box.left, 2) +
+                Math.pow(rect.bottom - box.bottom, 2)
+            ),
+            Math.sqrt(
+              Math.pow(rect.right - box.right, 2) +
+                Math.pow(rect.bottom - box.bottom, 2)
+            ),
+          ];
+
+          return distances.some((distance) => distance < SURROUNDING_RADIUS);
+        })
+        .map((box) => box.color);
+
+      console.groupCollapsed(`Element: ${element.tagName} (${i})`);
+      const color = this.colors.contrastColor(element, surroundingColors);
 
       // Set color as variable to be used in CSS
       div.style.setProperty(
         "--SoM-color",
-        `${color[0]}, ${color[1]}, ${color[2]}`
+        `${color.r}, ${color.g}, ${color.b}`
       );
 
       document.body.appendChild(div);
@@ -74,7 +99,7 @@ export default class UI {
 
       const label = document.createElement("label");
       label.textContent = `${i}`;
-      label.style.color = this.colorFromLuminance(box.color);
+      label.style.color = this.getColorByLuminance(box.color);
 
       rawBoxes[i].appendChild(label);
 
@@ -123,6 +148,16 @@ export default class UI {
         } else {
           // Calculate overlap with other labels and bounding boxes
           labels.concat(boundingBoxes).forEach((existing) => {
+            // Ignore bounding boxes that are fully covering the current box
+            if (
+              existing.top <= box.top &&
+              existing.bottom >= box.bottom &&
+              existing.left <= box.left &&
+              existing.right >= box.right
+            ) {
+              return;
+            }
+
             const overlapWidth = Math.max(
               0,
               Math.min(
@@ -165,9 +200,7 @@ export default class UI {
     }
   }
 
-  colorFromLuminance(color) {
-    const [r, g, b] = color.map((c) => c / 255.0);
-    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-    return luminance > 0.5 ? "black" : "white";
+  getColorByLuminance(color: Color) {
+    return color.luminance() > 0.5 ? "black" : "white";
   }
 }
