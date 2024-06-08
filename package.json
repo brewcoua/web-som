@@ -10,11 +10,27 @@
     "type": "git",
     "url": "git@github.com:brewcoua/web-som.git"
   },
-  "main": "dist/SoM.js",
+  "main": "./SoM.min.js",
+  "files": [
+    "SoM.min.js",
+    "SoM.min.js.map",
+    "SoM.js",
+    "SoM.js.map"
+  ],
   "devDependencies": {
-    "@types/contrast-color": "^1.0.3",
-    "clean-css": "^5.3.3",
-    "prettier": "^3.2.5"
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/npm": "^12.0.1",
+    "conventional-changelog-conventionalcommits": "^8.0.0",
+    "prettier": "^3.2.5",
+    "rollup": "^4.18.0",
+    "rollup-plugin-string": "^3.0.0",
+    "semantic-release": "^24.0.0",
+    "tslib": "^2.6.3",
+    "typescript": "^5.4.5"
   },
   "bugs": {
     "url": "https://github.com/brewcoua/web-som/issues",
@@ -24,6 +40,6 @@
   "homepage": "https://github.com/brewcoua/web-som#readme",
   "license": "(MIT OR Apache-2.0)",
   "scripts": {
-    "build": "bun ./build.ts"
+    "build": "rollup -c"
   }
 }
