@@ -48,6 +48,10 @@ jobs:
       - name: Build project
         run: bun run build
 
+      # Workaround for verifyConditions step of @semantic-release/npm
+      - run: cp ../package.json .
+        working-directory: dist
+
       - name: Release
         run: bunx semantic-release
         env:
