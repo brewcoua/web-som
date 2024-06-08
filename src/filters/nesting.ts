@@ -1,4 +1,5 @@
-import { Filter } from "../domain/filter";
+import Filter from "@/domain/Filter";
+import InteractiveElements from "@/domain/InteractiveElements";
 
 // Threshold to be considered disjoint from the top-level element
 const SIZE_THRESHOLD = 0.9;
@@ -8,11 +9,13 @@ const QUANTITY_THRESHOLD = 3;
 const PRIORITY_SELECTOR = ["a", "button", "input", "select", "textarea"];
 
 class NestingFilter extends Filter {
-  async apply(elements: HTMLElement[]): Promise<HTMLElement[]> {
+  async apply(elements: InteractiveElements): Promise<InteractiveElements> {
     // Basically, what we want to do it is compare the size of the top-level elements with the size of their children.
     // For that, we make branches and compare with the first children of each of these branches.
     // If there are other children beyond that, we'll recursively call this function on them.
-    const { top, others } = this.getTopLevelElements(elements);
+
+    const fullElements = elements.fixed.concat(elements.unknown);
+    const { top, others } = this.getTopLevelElements(fullElements);
 
     const results = await Promise.all(
       top.map(async (topElement) =>
@@ -20,10 +23,16 @@ class NestingFilter extends Filter {
       )
     );
 
-    return results.flat();
+    return {
+      fixed: elements.fixed,
+      unknown: results.flat().filter((el) => elements.fixed.indexOf(el) === -1),
+    };
   }
 
-  async compareTopWithChildren(top: HTMLElement, children: HTMLElement[]) {
+  async compareTopWithChildren(
+    top: HTMLElement,
+    children: HTMLElement[]
+  ): Promise<HTMLElement[]> {
     if (PRIORITY_SELECTOR.some((selector) => top.matches(selector))) {
       return [top];
     }
@@ -53,7 +62,7 @@ class NestingFilter extends Filter {
           return [branch.top];
         }
 
-        return await this.compareTopWithChildren(branch.top, branch.children);
+        return this.compareTopWithChildren(branch.top, branch.children);
       })
     );
 
