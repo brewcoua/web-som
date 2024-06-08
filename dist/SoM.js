@@ -117,23 +117,27 @@ class QuadTree {
     if (!this.boundary.intersects(element)) {
       return false;
     }
-    if (this.elements.length < this.capacity) {
+    if (this.elements.length < this.capacity && !this.divided) {
       this.elements.push(element);
       return true;
     } else {
       if (!this.divided) {
         this.subdivide();
       }
-      if (this.northeast.insert(element)) {
-        return true;
-      } else if (this.northwest.insert(element)) {
-        return true;
-      } else if (this.southeast.insert(element)) {
-        return true;
-      } else if (this.southwest.insert(element)) {
-        return true;
+      let inserted = false;
+      if (this.northeast.boundary.intersects(element)) {
+        inserted = this.northeast.insert(element) || inserted;
       }
-      return false;
+      if (this.northwest.boundary.intersects(element)) {
+        inserted = this.northwest.insert(element) || inserted;
+      }
+      if (this.southeast.boundary.intersects(element)) {
+        inserted = this.southeast.insert(element) || inserted;
+      }
+      if (this.southwest.boundary.intersects(element)) {
+        inserted = this.southwest.insert(element) || inserted;
+      }
+      return inserted;
     }
   }
   query(range, found = []) {
@@ -151,26 +155,31 @@ class QuadTree {
       this.southwest.query(range, found);
       this.southeast.query(range, found);
     }
-    return found;
+    return found.filter((el, i, arr) => arr.indexOf(el) === i);
   }
 }
 
 // src/filters/visibility/utils.ts
 function isAbove(element, referenceElement) {
-  const elementZIndex = window.getComputedStyle(element).zIndex;
-  const referenceElementZIndex = window.getComputedStyle(referenceElement).zIndex;
+  function getEffectiveZIndex(element2) {
+    while (element2) {
+      const zIndex = window.getComputedStyle(element2).zIndex;
+      if (zIndex !== "auto") {
+        const zIndexValue = parseInt(zIndex, 10);
+        return isNaN(zIndexValue) ? 0 : zIndexValue;
+      }
+      element2 = element2.parentElement;
+    }
+    return 0;
+  }
+  const elementZIndex = getEffectiveZIndex(element);
+  const referenceElementZIndex = getEffectiveZIndex(referenceElement);
   const elementPosition = element.compareDocumentPosition(referenceElement);
-  if (elementPosition & Node.DOCUMENT_POSITION_CONTAINS) {
+  if (elementPosition & Node.DOCUMENT_POSITION_CONTAINS || elementPosition & Node.DOCUMENT_POSITION_CONTAINED_BY) {
     return false;
   }
-  if (elementPosition & Node.DOCUMENT_POSITION_CONTAINED_BY) {
-    return true;
-  }
-  if (elementZIndex !== "auto" && referenceElementZIndex !== "auto") {
-    return parseInt(elementZIndex) > parseInt(referenceElementZIndex);
-  }
-  if (elementZIndex === "auto" || referenceElementZIndex === "auto") {
-    return !!(elementPosition & Node.DOCUMENT_POSITION_PRECEDING);
+  if (elementZIndex !== referenceElementZIndex) {
+    return elementZIndex < referenceElementZIndex;
   }
   return !!(elementPosition & Node.DOCUMENT_POSITION_PRECEDING);
 }
@@ -212,6 +221,7 @@ class VisibilityCanvas {
     this.ctx = this.canvas.getContext("2d", {
       willReadFrequently: true
     });
+    this.ctx.imageSmoothingEnabled = false;
     this.visibleRect = {
       top: Math.max(0, this.rect.top),
       left: Math.max(0, this.rect.left),
@@ -225,7 +235,7 @@ class VisibilityCanvas {
   }
   async eval(qt) {
     this.ctx.fillStyle = "black";
-    this.ctx.fillRect(0, 0, this.rect.width, this.rect.height);
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.drawElement(this.element, "white");
     const canvasVisRect = {
       top: this.visibleRect.top - this.rect.top,
@@ -248,13 +258,13 @@ class VisibilityCanvas {
   getIntersectingElements(qt) {
     const range = new Rectangle(this.rect.left, this.rect.right, this.rect.width, this.rect.height, this.element);
     const candidates = qt.query(range);
-    return candidates.map((candidate) => candidate.element).filter((el) => el != this.element && isAbove(el, this.element) && isVisible(el));
+    return candidates.map((candidate) => candidate.element).filter((el) => el != this.element && isAbove(this.element, el) && isVisible(el));
   }
   async countVisiblePixels(visibleRect) {
     const imageData = this.ctx.getImageData(visibleRect.left, visibleRect.top, visibleRect.width, visibleRect.height);
     let visiblePixels = 0;
     for (let i = 0;i < imageData.data.length; i += 4) {
-      const isWhite = imageData.data[i] === 255;
+      const isWhite = imageData.data[i + 1] === 255;
       if (isWhite) {
         visiblePixels++;
       }
@@ -494,7 +504,6 @@ class Loader {
     for (let i = 0;i < shadowRoots.length; i++) {
       fixedElements = fixedElements.concat(Array.from(shadowRoots[i].querySelectorAll(selector)));
     }
-    const allElements = document.querySelectorAll("*");
     let unknownElements = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
       acceptNode() {
@@ -991,7 +1000,7 @@ class UI {
 }
 
 // src/style.css
-var style_default = ".SoM{position:fixed;z-index:2147483646;pointer-events:none;background-color:rgba(var(--SoM-color),.45)}.SoM.editable{background:repeating-linear-gradient(45deg,rgba(var(--SoM-color),.15),rgba(var(--SoM-color),.15) 10px,rgba(var(--SoM-color),.45) 10px,rgba(var(--SoM-color),.45) 20px);outline:2px solid rgba(var(--SoM-color),.7)}.SoM>label{position:absolute;padding:0 3px;font-size:1rem;font-weight:700;line-height:1.2rem;white-space:nowrap;font-family:\"Courier New\",Courier,monospace;background-color:rgba(var(--SoM-color),.7)}";
+var style_default = ".SoM{position:fixed;z-index:2147483646;pointer-events:none;background-color:rgba(var(--SoM-color),.35)}.SoM.editable{background:repeating-linear-gradient(45deg,rgba(var(--SoM-color),.15),rgba(var(--SoM-color),.15) 10px,rgba(var(--SoM-color),.35) 10px,rgba(var(--SoM-color),.35) 20px);outline:2px solid rgba(var(--SoM-color),.7)}.SoM>label{position:absolute;padding:0 3px;font-size:1rem;font-weight:700;line-height:1.2rem;white-space:nowrap;font-family:'Courier New',Courier,monospace;background-color:rgba(var(--SoM-color),.7)}";
 
 // src/main.ts
 class SoM {

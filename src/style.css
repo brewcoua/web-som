@@ -1,31 +1,31 @@
 .SoM {
-  position: fixed;
-  z-index: 2147483646;
-  pointer-events: none;
-  background-color: rgba(var(--SoM-color), 0.45);
+	position: fixed;
+	z-index: 2147483646;
+	pointer-events: none;
+	background-color: rgba(var(--SoM-color), 0.35);
 }
 
 .SoM.editable {
-  /* Apply stripes effect to display that the element is editable, while keeping the same colors */
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(var(--SoM-color), 0.15),
-    rgba(var(--SoM-color), 0.15) 10px,
-    rgba(var(--SoM-color), 0.45) 10px,
-    rgba(var(--SoM-color), 0.45) 20px
-  );
+	/* Apply stripes effect to display that the element is editable, while keeping the same colors */
+	background: repeating-linear-gradient(
+		45deg,
+		rgba(var(--SoM-color), 0.15),
+		rgba(var(--SoM-color), 0.15) 10px,
+		rgba(var(--SoM-color), 0.35) 10px,
+		rgba(var(--SoM-color), 0.35) 20px
+	);
 
-  /* Add an outline to make the element more visible */
-  outline: 2px solid rgba(var(--SoM-color), 0.7);
+	/* Add an outline to make the element more visible */
+	outline: 2px solid rgba(var(--SoM-color), 0.7);
 }
 
 .SoM > label {
-  position: absolute;
-  padding: 0 3px;
-  font-size: 1rem;
-  font-weight: bold;
-  line-height: 1.2rem;
-  white-space: nowrap;
-  font-family: "Courier New", Courier, monospace;
-  background-color: rgba(var(--SoM-color), 0.7);
+	position: absolute;
+	padding: 0 3px;
+	font-size: 1rem;
+	font-weight: bold;
+	line-height: 1.2rem;
+	white-space: nowrap;
+	font-family: 'Courier New', Courier, monospace;
+	background-color: rgba(var(--SoM-color), 0.7);
 }
