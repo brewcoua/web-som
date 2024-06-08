@@ -15,18 +15,23 @@ export default {
 				prepareCmd: 'mkdir -p dist && cp package.json README.md LICENSE* dist',
 			},
 		],
-		'@semantic-release/git',
-		[
-			'@semantic-release/github',
-			{
-				assets: 'dist/*.js',
-			},
-		],
 		[
 			'@semantic-release/npm',
 			{
 				npmPublish: true,
 				pkgRoot: 'dist',
+			},
+		],
+		[
+			'@semantic-release/git',
+			{
+				prepareCmd: 'cp dist/package.json package.json',
+			},
+		],
+		[
+			'@semantic-release/github',
+			{
+				assets: 'dist/*.js',
 			},
 		],
 	],
