@@ -12,7 +12,7 @@ You can then use the `SoM` object in the `window` object to interact with the sc
 ### Example
 
 ```js
-window.SoM.display().then(() => console.log("Set-of-Marks displayed"));
+window.SoM.display().then(() => console.log('Set-of-Marks displayed'));
 ```
 
 ### How it works
@@ -25,7 +25,7 @@ The script will first query all elements on the page (and inside shadow roots) t
 
 #### 2. Elements filtering
 
-The script will then first proceed to filter out, in both lists, the elements that are not visible enough (see [src/constants.ts](src/constants.ts) for the threshold values, e.g. `0.7`). To do that, we first use an [Intersection Observer](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API) to check if the element is visible enough in the viewport, and if it is, we check the actual pixel-by-pixel visibility ratio of the element by first drawing it on a canvas, then drawing the overlapping elements on the same canvas, and finally counting the number of pixels that were not overlapped by other elements.
+The script will then first proceed to filter out, in both lists, the elements that are not visible enough (see [src/constants.ts](src/constants.ts) for the threshold values, e.g. `0.7`). To do that, we first use an [Intersection Observer](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API) to check if the element is visible enough in the viewport, and if it is, we find the elements that are possibly intersecting with the element, using a QuadTree that we previously built with all elements on the page by their bounding boxes. We then query the QuadTree for elements that are possibly intersecting with the element, and we draw them on a canvas, after drawing the original element. We then calculate the pixel-by-pixel visibility ratio by counting the number of pixels that were not overlapped by other elements. If the ratio is above the threshold, we consider the element visible enough.
 
 After that, we take the elements in the second list (the ones that display a pointer cursor) and apply a nesting filter. This filter will remove all elements that are either inside a prioritized element (e.g. a button) or that have too many clickable children. Additionally, we consider elements disjoint if their size is different enough (see [src/constants.ts](src/constants.ts) for the threshold value, e.g. `0.7`).
 When applying this filter, we also consider the first list for reference, while not removing any element from that first list afterwards.
