@@ -12,7 +12,7 @@ export default {
 		[
 			'@semantic-release/exec',
 			{
-				prepareCmd: 'cp package.json README.md LICENSE* dist',
+				prepareCmd: 'mkdir -p dist && cp package.json README.md LICENSE* dist',
 			},
 		],
 		'@semantic-release/git',
