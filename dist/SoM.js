@@ -46,184 +46,237 @@ var EDITABLE_SELECTORS = [
   '[contenteditable="true"]'
 ];
 var VISIBILITY_RATIO = 0.6;
-var ELEMENT_SAMPLING_RATE = 0.2;
+var MAX_COVER_RATIO = 0.8;
+var ELEMENT_BATCH_SIZE = 10;
 var SURROUNDING_RADIUS = 200;
 var MAX_LUMINANCE = 0.7;
 var MIN_LUMINANCE = 0.25;
 var MIN_SATURATION = 0.3;
 
-// src/domain/filter.ts
+// src/domain/Filter.ts
 class Filter {
 }
 
-// src/filters/visibility.ts
-class VisibilityFilter extends Filter {
-  constructor() {
-    super(...arguments);
+// src/filters/visibility/quad.ts
+class Rectangle {
+  x;
+  y;
+  width;
+  height;
+  element;
+  constructor(x, y, width, height, element = null) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.element = element;
   }
-  async apply(elements) {
-    const visibleElements = await Promise.all(elements.map(async (element) => {
-      if (element.offsetWidth === 0 && element.offsetHeight === 0) {
-        return null;
-      }
-      const style = window.getComputedStyle(element);
-      if (style.display === "none" || style.visibility === "hidden" || style.pointerEvents === "none") {
-        return null;
-      }
-      let parent = element.parentElement;
-      let passed = true;
-      while (parent !== null) {
-        const parentStyle = window.getComputedStyle(parent);
-        if (parentStyle.display === "none" || parentStyle.visibility === "hidden" || parentStyle.pointerEvents === "none") {
-          passed = false;
-          break;
-        }
-        parent = parent.parentElement;
-      }
-      if (!passed) {
-        return null;
-      }
-      const isVisible = await this.isElementVisible(element);
-      if (!isVisible) {
-        return null;
-      }
-      return element;
-    }));
-    return visibleElements.filter((element) => element !== null);
+  contains(rect) {
+    return rect.x >= this.x && rect.x + rect.width <= this.x + this.width && rect.y >= this.y && rect.y + rect.height <= this.y + this.height;
   }
-  async isElementVisible(element) {
-    return new Promise((resolve) => {
-      const observer = new IntersectionObserver(async (entries) => {
-        const entry = entries[0];
-        observer.disconnect();
-        if (entry.intersectionRatio < VISIBILITY_RATIO) {
-          resolve(false);
-          return;
-        }
-        const rect = element.getBoundingClientRect();
-        if (rect.width <= 1 || rect.height <= 1) {
-          resolve(false);
-          return;
-        }
-        if (rect.width >= window.innerWidth * 0.8 || rect.height >= window.innerHeight * 0.8) {
-          resolve(false);
-          return;
-        }
-        const visibleAreaRatio = await this.getVisibilityRatio(element, rect);
-        resolve(visibleAreaRatio >= VISIBILITY_RATIO);
-      });
-      observer.observe(element);
-    });
+  intersects(rect) {
+    return !(rect.x > this.x + this.width || rect.x + rect.width < this.x || rect.y > this.y + this.height || rect.y + rect.height < this.y);
   }
-  async getVisibilityRatio(element, rect) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", {
+}
+
+class QuadTree {
+  boundary;
+  capacity;
+  elements;
+  divided;
+  northeast;
+  northwest;
+  southeast;
+  southwest;
+  constructor(boundary, capacity) {
+    this.boundary = boundary;
+    this.capacity = capacity;
+    this.elements = [];
+    this.divided = false;
+    this.northeast = null;
+    this.northwest = null;
+    this.southeast = null;
+    this.southwest = null;
+  }
+  subdivide() {
+    const x = this.boundary.x;
+    const y = this.boundary.y;
+    const w = this.boundary.width / 2;
+    const h = this.boundary.height / 2;
+    const ne = new Rectangle(x + w, y, w, h);
+    const nw = new Rectangle(x, y, w, h);
+    const se = new Rectangle(x + w, y + h, w, h);
+    const sw = new Rectangle(x, y + h, w, h);
+    this.northeast = new QuadTree(ne, this.capacity);
+    this.northwest = new QuadTree(nw, this.capacity);
+    this.southeast = new QuadTree(se, this.capacity);
+    this.southwest = new QuadTree(sw, this.capacity);
+    this.divided = true;
+  }
+  insert(element) {
+    if (!this.boundary.intersects(element)) {
+      return false;
+    }
+    if (this.elements.length < this.capacity) {
+      this.elements.push(element);
+      return true;
+    } else {
+      if (!this.divided) {
+        this.subdivide();
+      }
+      if (this.northeast.insert(element)) {
+        return true;
+      } else if (this.northwest.insert(element)) {
+        return true;
+      } else if (this.southeast.insert(element)) {
+        return true;
+      } else if (this.southwest.insert(element)) {
+        return true;
+      }
+      return false;
+    }
+  }
+  query(range, found = []) {
+    if (!this.boundary.intersects(range)) {
+      return found;
+    }
+    for (let element of this.elements) {
+      if (range.intersects(element)) {
+        found.push(element);
+      }
+    }
+    if (this.divided) {
+      this.northwest.query(range, found);
+      this.northeast.query(range, found);
+      this.southwest.query(range, found);
+      this.southeast.query(range, found);
+    }
+    return found;
+  }
+}
+
+// src/filters/visibility/utils.ts
+function isAbove(element, referenceElement) {
+  const elementZIndex = window.getComputedStyle(element).zIndex;
+  const referenceElementZIndex = window.getComputedStyle(referenceElement).zIndex;
+  const elementPosition = element.compareDocumentPosition(referenceElement);
+  if (elementPosition & Node.DOCUMENT_POSITION_CONTAINS) {
+    return false;
+  }
+  if (elementPosition & Node.DOCUMENT_POSITION_CONTAINED_BY) {
+    return true;
+  }
+  if (elementZIndex !== "auto" && referenceElementZIndex !== "auto") {
+    return parseInt(elementZIndex) > parseInt(referenceElementZIndex);
+  }
+  if (elementZIndex === "auto" || referenceElementZIndex === "auto") {
+    return !!(elementPosition & Node.DOCUMENT_POSITION_PRECEDING);
+  }
+  return !!(elementPosition & Node.DOCUMENT_POSITION_PRECEDING);
+}
+function isVisible(element) {
+  if (element.offsetWidth === 0 && element.offsetHeight === 0) {
+    return false;
+  }
+  const rect = element.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) {
+    return false;
+  }
+  const style = window.getComputedStyle(element);
+  if (style.display === "none" || style.visibility === "hidden" || style.pointerEvents === "none") {
+    return false;
+  }
+  let parent = element.parentElement;
+  while (parent !== null) {
+    const parentStyle = window.getComputedStyle(parent);
+    if (parentStyle.display === "none" || parentStyle.visibility === "hidden" || parentStyle.pointerEvents === "none") {
+      return false;
+    }
+    parent = parent.parentElement;
+  }
+  return true;
+}
+
+// src/filters/visibility/canvas.ts
+class VisibilityCanvas {
+  element;
+  canvas;
+  ctx;
+  rect;
+  visibleRect;
+  constructor(element) {
+    this.element = element;
+    this.element = element;
+    this.rect = this.element.getBoundingClientRect();
+    this.canvas = new OffscreenCanvas(this.rect.width, this.rect.height);
+    this.ctx = this.canvas.getContext("2d", {
       willReadFrequently: true
     });
-    if (!ctx) {
-      throw new Error("Could not get 2D context");
-    }
-    const elementZIndex = parseInt(window.getComputedStyle(element).zIndex || "0", 10);
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const visibleRect = {
-      top: Math.max(0, rect.top),
-      left: Math.max(0, rect.left),
-      bottom: Math.min(window.innerHeight, rect.bottom),
-      right: Math.min(window.innerWidth, rect.right),
-      width: rect.width,
-      height: rect.height
+    this.visibleRect = {
+      top: Math.max(0, this.rect.top),
+      left: Math.max(0, this.rect.left),
+      bottom: Math.min(window.innerHeight, this.rect.bottom),
+      right: Math.min(window.innerWidth, this.rect.right),
+      width: this.rect.width,
+      height: this.rect.height
     };
-    visibleRect.width = visibleRect.right - visibleRect.left;
-    visibleRect.height = visibleRect.bottom - visibleRect.top;
-    this.drawElement(element, ctx, rect, rect, "white");
-    const totalPixels = this.countVisiblePixels(ctx, {
-      top: visibleRect.top - rect.top,
-      left: visibleRect.left - rect.left,
-      width: canvas.width,
-      height: canvas.height
-    });
-    const elements = await this.getIntersectingElements(element);
-    await Promise.all(elements.map(async (el) => {
-      const elRect = el.getBoundingClientRect();
-      this.drawElement(el, ctx, elRect, rect, "black");
-    }));
-    const visiblePixels = this.countVisiblePixels(ctx, {
-      top: visibleRect.top - rect.top,
-      left: visibleRect.left - rect.left,
-      width: visibleRect.width,
-      height: visibleRect.height
-    });
-    canvas.remove();
-    if (totalPixels === 0) {
+    this.visibleRect.width = this.visibleRect.right - this.visibleRect.left;
+    this.visibleRect.height = this.visibleRect.bottom - this.visibleRect.top;
+  }
+  async eval(qt) {
+    this.ctx.fillStyle = "black";
+    this.ctx.fillRect(0, 0, this.rect.width, this.rect.height);
+    this.drawElement(this.element, "white");
+    const canvasVisRect = {
+      top: this.visibleRect.top - this.rect.top,
+      bottom: this.visibleRect.bottom - this.rect.top,
+      left: this.visibleRect.left - this.rect.left,
+      right: this.visibleRect.right - this.rect.left,
+      width: this.canvas.width,
+      height: this.canvas.height
+    };
+    const totalPixels = await this.countVisiblePixels(canvasVisRect);
+    if (totalPixels === 0)
       return 0;
+    const elements = this.getIntersectingElements(qt);
+    for (const el of elements) {
+      this.drawElement(el, "black");
     }
+    const visiblePixels = await this.countVisiblePixels(canvasVisRect);
     return visiblePixels / totalPixels;
   }
-  async getIntersectingElements(element) {
-    const elementZIndex = parseInt(window.getComputedStyle(element).zIndex || "0", 10);
-    const rect = element.getBoundingClientRect();
-    const foundElements = await Promise.all(Array.from({ length: Math.ceil(1 / ELEMENT_SAMPLING_RATE) }).map(async (_, i) => {
-      return Array.from({
-        length: Math.ceil(1 / ELEMENT_SAMPLING_RATE)
-      }).map((_2, j) => {
-        const elements2 = document.elementsFromPoint(rect.left + rect.width * ELEMENT_SAMPLING_RATE * i, rect.top + rect.height * ELEMENT_SAMPLING_RATE * j);
-        if (!elements2.includes(element)) {
-          return [];
-        }
-        const currentIndex = elements2.indexOf(element);
-        return elements2.slice(0, currentIndex);
-      });
-    }));
-    const uniqueElements = Array.from(new Set(foundElements.flat(2).filter((el) => el !== element)));
-    let elements = [];
-    for (const el of uniqueElements) {
-      const elZIndex = parseInt(window.getComputedStyle(el).zIndex || "0", 10);
-      if (elZIndex < elementZIndex) {
-        continue;
-      }
-      if (el.contains(element) || element.contains(el)) {
-        continue;
-      }
-      elements.push(el);
-    }
-    elements = elements.filter((el) => {
-      for (const other of elements) {
-        if (el !== other && other.contains(el)) {
-          return false;
-        }
-      }
-      return true;
-    });
-    return elements;
+  getIntersectingElements(qt) {
+    const range = new Rectangle(this.rect.left, this.rect.right, this.rect.width, this.rect.height, this.element);
+    const candidates = qt.query(range);
+    return candidates.map((candidate) => candidate.element).filter((el) => el != this.element && isAbove(el, this.element) && isVisible(el));
   }
-  countVisiblePixels(ctx, rect) {
-    const data = ctx.getImageData(rect.left, rect.top, rect.width, rect.height).data;
+  async countVisiblePixels(visibleRect) {
+    const imageData = this.ctx.getImageData(visibleRect.left, visibleRect.top, visibleRect.width, visibleRect.height);
     let visiblePixels = 0;
-    for (let i = 0;i < data.length; i += 4) {
-      if (data[i] > 0) {
+    for (let i = 0;i < imageData.data.length; i += 4) {
+      const isWhite = imageData.data[i] === 255;
+      if (isWhite) {
         visiblePixels++;
       }
     }
     return visiblePixels;
   }
-  drawElement(element, ctx, rect, baseRect, color = "black") {
+  drawElement(element, color = "black") {
+    const rect = element.getBoundingClientRect();
     const styles = window.getComputedStyle(element);
     const radius = styles.borderRadius?.split(" ").map((r) => parseFloat(r));
     const clipPath = styles.clipPath;
     const offsetRect = {
-      top: rect.top - baseRect.top,
-      bottom: rect.bottom - baseRect.top,
-      left: rect.left - baseRect.left,
-      right: rect.right - baseRect.left,
+      top: rect.top - this.rect.top,
+      bottom: rect.bottom - this.rect.top,
+      left: rect.left - this.rect.left,
+      right: rect.right - this.rect.left,
       width: rect.width,
       height: rect.height
     };
     offsetRect.width = offsetRect.right - offsetRect.left;
     offsetRect.height = offsetRect.bottom - offsetRect.top;
-    ctx.fillStyle = color;
+    this.ctx.fillStyle = color;
     if (clipPath && clipPath !== "none") {
       const clips = clipPath.split(/,| /);
       clips.forEach((clip) => {
@@ -234,7 +287,7 @@ class VisibilityFilter extends Filter {
         switch (kind[0]) {
           case "polygon":
             const path = this.pathFromPolygon(clip, rect);
-            ctx.fill(path);
+            this.ctx.fill(path);
             break;
           default:
             console.log("Unknown clip path kind: " + kind);
@@ -254,9 +307,9 @@ class VisibilityFilter extends Filter {
       path.arcTo(offsetRect.left, offsetRect.bottom, offsetRect.left, offsetRect.top, radius[3]);
       path.arcTo(offsetRect.left, offsetRect.top, offsetRect.right, offsetRect.top, radius[0]);
       path.closePath();
-      ctx.fill(path);
+      this.ctx.fill(path);
     } else {
-      ctx.fillRect(offsetRect.left, offsetRect.top, offsetRect.width, offsetRect.height);
+      this.ctx.fillRect(offsetRect.left, offsetRect.top, offsetRect.width, offsetRect.height);
     }
   }
   pathFromPolygon(polygon, rect) {
@@ -279,6 +332,83 @@ class VisibilityFilter extends Filter {
     return path;
   }
 }
+
+// src/filters/visibility/index.ts
+class VisibilityFilter extends Filter {
+  constructor() {
+    super(...arguments);
+  }
+  qt;
+  async apply(elements) {
+    this.qt = this.mapQuadTree();
+    const results = await Promise.all([
+      this.applyScoped(elements.fixed),
+      this.applyScoped(elements.unknown)
+    ]);
+    return {
+      fixed: results[0],
+      unknown: results[1]
+    };
+  }
+  async applyScoped(elements) {
+    const results = await Promise.all(Array.from({
+      length: Math.ceil(elements.length / ELEMENT_BATCH_SIZE)
+    }).map(async (_, i) => {
+      const batch = elements.slice(i * ELEMENT_BATCH_SIZE, (i + 1) * ELEMENT_BATCH_SIZE).filter((el) => isVisible(el));
+      const visibleElements = [];
+      for (const element of batch) {
+        const isVisible2 = await this.isDeepVisible(element);
+        if (isVisible2) {
+          visibleElements.push(element);
+        }
+      }
+      return visibleElements;
+    }));
+    return results.flat();
+  }
+  mapQuadTree() {
+    const boundary = new Rectangle(0, 0, window.innerWidth, window.innerHeight);
+    const qt = new QuadTree(boundary, 4);
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
+      acceptNode: (node) => {
+        const element = node;
+        if (isVisible(element)) {
+          return NodeFilter.FILTER_ACCEPT;
+        }
+        return NodeFilter.FILTER_REJECT;
+      }
+    });
+    let currentNode = walker.currentNode;
+    while (currentNode) {
+      const element = currentNode;
+      const rect = element.getBoundingClientRect();
+      qt.insert(new Rectangle(rect.left, rect.top, rect.width, rect.height, element));
+      currentNode = walker.nextNode();
+    }
+    return qt;
+  }
+  async isDeepVisible(element) {
+    return new Promise((resolve) => {
+      const observer = new IntersectionObserver(async (entries) => {
+        const entry = entries[0];
+        observer.disconnect();
+        if (entry.intersectionRatio < VISIBILITY_RATIO) {
+          resolve(false);
+          return;
+        }
+        const rect = element.getBoundingClientRect();
+        if (rect.width >= window.innerWidth * MAX_COVER_RATIO || rect.height >= window.innerHeight * MAX_COVER_RATIO) {
+          resolve(false);
+          return;
+        }
+        const canvas2 = new VisibilityCanvas(element);
+        const visibleAreaRatio = await canvas2.eval(this.qt);
+        resolve(visibleAreaRatio >= VISIBILITY_RATIO);
+      });
+      observer.observe(element);
+    });
+  }
+}
 var visibility_default = VisibilityFilter;
 // src/filters/nesting.ts
 var SIZE_THRESHOLD = 0.9;
@@ -290,9 +420,13 @@ class NestingFilter extends Filter {
     super(...arguments);
   }
   async apply(elements) {
-    const { top, others } = this.getTopLevelElements(elements);
+    const fullElements = elements.fixed.concat(elements.unknown);
+    const { top, others } = this.getTopLevelElements(fullElements);
     const results = await Promise.all(top.map(async (topElement) => this.compareTopWithChildren(topElement, others)));
-    return results.flat();
+    return {
+      fixed: elements.fixed,
+      unknown: results.flat().filter((el) => elements.fixed.indexOf(el) === -1)
+    };
   }
   async compareTopWithChildren(top, children) {
     if (PRIORITY_SELECTOR.some((selector) => top.matches(selector))) {
@@ -311,7 +445,7 @@ class NestingFilter extends Filter {
       if (branch.children.length === 0) {
         return [branch.top];
       }
-      return await this.compareTopWithChildren(branch.top, branch.children);
+      return this.compareTopWithChildren(branch.top, branch.children);
     }));
     const total = results.flat();
     if (total.length > QUANTITY_THRESHOLD) {
@@ -355,23 +489,38 @@ class Loader {
   };
   async loadElements() {
     const selector = SELECTORS.join(",");
-    let preselectedElements = Array.from(document.querySelectorAll(selector));
+    let fixedElements = Array.from(document.querySelectorAll(selector));
     const shadowRoots = this.shadowRoots();
     for (let i = 0;i < shadowRoots.length; i++) {
-      preselectedElements = preselectedElements.concat(Array.from(shadowRoots[i].querySelectorAll(selector)));
+      fixedElements = fixedElements.concat(Array.from(shadowRoots[i].querySelectorAll(selector)));
     }
     const allElements = document.querySelectorAll("*");
-    let clickableElements = [];
-    for (let i = 0;i < allElements.length; i++) {
-      if (!allElements[i].matches(selector) && window.getComputedStyle(allElements[i]).cursor === "pointer") {
-        clickableElements.push(allElements[i]);
+    let unknownElements = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT, {
+      acceptNode() {
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    let node;
+    while (node = walker.nextNode()) {
+      const el = node;
+      if (!el.matches(selector) && window.getComputedStyle(el).cursor === "pointer") {
+        unknownElements.push(el);
       }
     }
-    clickableElements = Array.from(clickableElements).filter((element, index, self) => self.indexOf(element) === index).filter((element) => !element.closest("svg") && !preselectedElements.some((el) => el.contains(element)));
-    const visiblePreselected = await this.filters.visibility.apply(preselectedElements);
-    const visibleClickable = await this.filters.visibility.apply(clickableElements);
-    const nestedAll = await this.filters.nesting.apply(visibleClickable.concat(visiblePreselected));
-    return visiblePreselected.concat(nestedAll).filter((element, index, self) => self.indexOf(element) === index);
+    unknownElements = Array.from(unknownElements).filter((element, index, self) => self.indexOf(element) === index).filter((element) => !element.closest("svg") && !fixedElements.some((el) => el.contains(element)));
+    let interactive = {
+      fixed: fixedElements,
+      unknown: unknownElements
+    };
+    console.groupCollapsed("Elements");
+    console.log("Before filters", interactive);
+    interactive = await this.filters.visibility.apply(interactive);
+    console.log("After visibility filter", interactive);
+    interactive = await this.filters.nesting.apply(interactive);
+    console.log("After nesting filter", interactive);
+    console.groupEnd();
+    return interactive.fixed.concat(interactive.unknown);
   }
   shadowRoots() {
     const shadowRoots = [];
@@ -764,7 +913,6 @@ class UI {
         ];
         return distances.some((distance) => distance < SURROUNDING_RADIUS);
       }).map((box) => box.color);
-      console.groupCollapsed(`Element: ${element.tagName} (${i})`);
       const color = this.colors.contrastColor(element, surroundingColors);
       div.style.setProperty("--SoM-color", `${color.r}, ${color.g}, ${color.b}`);
       document.body.appendChild(div);

@@ -23,19 +23,28 @@ async function main() {
 
   rmSync("dist", { recursive: true, force: true });
 
-  await Bun.build({
+  const result1 = await Bun.build({
     entrypoints: ["./src/main.ts"],
     outdir: "./dist",
     plugins: [InlineStylePlugin],
   });
+  if (!result1.success) {
+    result1.logs.forEach(console.log);
+    process.exit(1);
+  }
   renameSync("./dist/main.js", "./dist/SoM.js");
 
-  await Bun.build({
+  const result2 = await Bun.build({
     entrypoints: ["./src/main.ts"],
     outdir: "./dist",
     plugins: [InlineStylePlugin],
     minify: true,
   });
+  if (!result2.success) {
+    result2.logs.forEach(console.log);
+    process.exit(1);
+  }
+
   renameSync("./dist/main.js", "./dist/SoM.min.js");
 }
 

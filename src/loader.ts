@@ -1,4 +1,5 @@
 import { SELECTORS } from "./constants";
+import InteractiveElements from "./domain/InteractiveElements";
 import { VisibilityFilter, NestingFilter } from "./filters";
 
 export default class Loader {
@@ -10,50 +11,64 @@ export default class Loader {
   async loadElements() {
     const selector = SELECTORS.join(",");
 
-    let preselectedElements = Array.from(document.querySelectorAll(selector));
+    let fixedElements = Array.from(
+      document.querySelectorAll(selector)
+    ) as HTMLElement[];
 
     // Let's also do a querySelectorAll inside all the shadow roots (for custom elements, e.g. reddit)
     const shadowRoots = this.shadowRoots();
     for (let i = 0; i < shadowRoots.length; i++) {
-      preselectedElements = preselectedElements.concat(
+      fixedElements = fixedElements.concat(
         Array.from(shadowRoots[i].querySelectorAll(selector))
       );
     }
 
-    const allElements = document.querySelectorAll("*");
+    let unknownElements: HTMLElement[] = [];
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode() {
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      }
+    );
 
-    let clickableElements: HTMLElement[] = [];
-    for (let i = 0; i < allElements.length; i++) {
+    let node: Node | null;
+    while ((node = walker.nextNode())) {
+      const el = node as HTMLElement;
       if (
-        // Make sure it does not match the selector too to avoid duplicates
-        !allElements[i].matches(selector) &&
-        window.getComputedStyle(allElements[i]).cursor === "pointer"
+        !el.matches(selector) &&
+        window.getComputedStyle(el).cursor === "pointer"
       ) {
-        clickableElements.push(allElements[i] as HTMLElement);
+        unknownElements.push(el);
       }
     }
 
-    clickableElements = Array.from(clickableElements)
+    unknownElements = Array.from(unknownElements)
       .filter((element, index, self) => self.indexOf(element) === index)
       .filter(
         (element) =>
           !element.closest("svg") &&
-          !preselectedElements.some((el) => el.contains(element))
+          !fixedElements.some((el) => el.contains(element))
       );
 
-    const visiblePreselected = await this.filters.visibility.apply(
-      preselectedElements as HTMLElement[]
-    );
+    let interactive: InteractiveElements = {
+      fixed: fixedElements,
+      unknown: unknownElements,
+    };
 
-    const visibleClickable =
-      await this.filters.visibility.apply(clickableElements);
-    const nestedAll = await this.filters.nesting.apply(
-      visibleClickable.concat(visiblePreselected)
-    );
+    console.groupCollapsed("Elements");
+    console.log("Before filters", interactive);
 
-    return visiblePreselected
-      .concat(nestedAll)
-      .filter((element, index, self) => self.indexOf(element) === index);
+    interactive = await this.filters.visibility.apply(interactive);
+    console.log("After visibility filter", interactive);
+
+    interactive = await this.filters.nesting.apply(interactive);
+    console.log("After nesting filter", interactive);
+    console.groupEnd();
+
+    return interactive.fixed.concat(interactive.unknown);
   }
 
   shadowRoots() {
