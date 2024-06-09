@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/brewcoua/web-som/compare/v1.1.1...v1.1.2) (2024-06-09)
+
+
+### Bug Fixes
+
+* **release:** add double exec to commit bumped version ([0cb3dcb](https://github.com/brewcoua/web-som/commit/0cb3dcbac61d0860698dac829fd346eba8c31b75))
+
 ## [1.1.1](https://github.com/brewcoua/web-som/compare/v1.1.0...v1.1.1) (2024-06-09)
 
 
