@@ -1,5 +1,9 @@
 # `@brewcoua/web-som`
 
+![NPM Version](https://img.shields.io/npm/v/%40brewcoua%2Fweb-som)
+![NPM License](https://img.shields.io/npm/l/%40brewcoua%2Fweb-som)
+![GitHub branch check runs](https://img.shields.io/github/check-runs/brewcoua/web-som/master)
+
 A Set-of-Marks script for web grounding, suitable for web agent automation.
 When using this script, the web page should not have any animations or dynamic content that could interfere with the
 script's operation. Additionally, since the script uses quite a few promises, it is recommended to avoid using too little
