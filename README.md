@@ -8,6 +8,14 @@ resources, as it could lead to a deadlock.
 ## Usage
 
 Include the script in your web page (`SoM.js` or `SoM.min.js`), and then call the `display` method on the `SoM` object in the `window` object.
+Additionally, you can use [unpkg](https://unpkg.com/) to include the script in your page, like so:
+
+```html
+<!-- latest -->
+<script src="https://unpkg.com/@brewcoua/web-som"></script>
+<!-- specific version -->
+<script src="https://unpkg.com/@brewcoua/web-som@1.0.0"></script>
+```
 
 ### Example
 
