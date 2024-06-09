@@ -1,3 +1,12 @@
+## [1.1.3](https://github.com/brewcoua/web-som/compare/v1.1.2...v1.1.3) (2024-06-09)
+
+
+### Bug Fixes
+
+* **ci:** remove signed push to avoid github failure ([8e2893e](https://github.com/brewcoua/web-som/commit/8e2893ec6c824647308870fcc44c0fdfc5c26a17))
+* **ci:** remove tag sign since it forces EDITOR to be set ([d5d6cc9](https://github.com/brewcoua/web-som/commit/d5d6cc9b0d35bed2f0938001fe323caed3265ed5))
+* **ci:** update author and committer & sign action commits ([842605a](https://github.com/brewcoua/web-som/commit/842605a65dc9c7eb07e8a48f1c62115c39fa9175))
+
 ## [1.1.2](https://github.com/brewcoua/web-som/compare/v1.1.1...v1.1.2) (2024-06-09)
 
 
