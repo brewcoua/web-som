@@ -1,18 +1,23 @@
-# `web-som`
+# `@brewcoua/web-som`
 
 A Set-of-Marks script for web grounding, suitable for web agent automation.
 When using this script, the web page should not have any animations or dynamic content that could interfere with the
-script's operation.
+script's operation. Additionally, since the script uses quite a few promises, it is recommended to avoid using too little
+resources, as it could lead to a deadlock.
 
 ## Usage
 
-Include both the script (`SoM.js` or `SoM.min.js`) and the style (`SoM.css` or `SoM.min.css`) in the web page.
-You can then use the `SoM` object in the `window` object to interact with the script.
+Include the script in your web page (`SoM.js` or `SoM.min.js`), and then call the `display` method on the `SoM` object in the `window` object.
 
 ### Example
 
 ```js
-window.SoM.display().then(() => console.log('Set-of-Marks displayed'));
+(async () => {
+	await window.SoM.display();
+	console.log('Set-of-Marks displayed');
+	const mark = window.SoM.resolve(4); // Resolve the fourth mark (with label '4')
+	mark.click(); // Click the mark
+})();
 ```
 
 ### How it works

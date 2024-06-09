@@ -7,12 +7,12 @@ export default {
 	output: [
 		{
 			file: 'dist/SoM.js',
-			format: 'cjs',
+			format: 'umd',
 			sourcemap: true,
 		},
 		{
 			file: 'dist/SoM.min.js',
-			format: 'cjs',
+			format: 'umd',
 			sourcemap: true,
 			plugins: [terser()],
 		},
