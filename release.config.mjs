@@ -23,15 +23,16 @@ export default {
 			},
 		],
 		[
-			'@semantic-release/git',
+			'@semantic-release/exec',
 			{
 				prepareCmd: 'cp dist/package.json package.json',
 			},
 		],
+		'@semantic-release/git',
 		[
 			'@semantic-release/github',
 			{
-				assets: 'dist/*.js',
+				assets: ['dist/*.js', 'dist/*.js.map'],
 			},
 		],
 	],
