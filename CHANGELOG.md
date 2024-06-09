@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/brewcoua/web-som/compare/v1.1.0...v1.1.1) (2024-06-09)
+
+
+### Bug Fixes
+
+* **rollup:** update built format to UMD & fix usage info ([e027208](https://github.com/brewcoua/web-som/commit/e027208ef1f3f7ac069dddbcb9a55619c0360e49))
+
 # [1.1.0](https://github.com/brewcoua/web-som/compare/v1.0.0...v1.1.0) (2024-06-08)
 
 
