@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/brewcoua/web-som/compare/v1.1.4...v1.2.0) (2024-06-10)
+
+
+### Features
+
+* **ui:** make colors more flashy and complimentary ([f6b250f](https://github.com/brewcoua/web-som/commit/f6b250f2f3c29e94848c86f50979c6635035cbbd))
+
+
+### Performance Improvements
+
+* **visibility:** use rbush to speed up dom mapping ([e613f42](https://github.com/brewcoua/web-som/commit/e613f429683dde67fb403f6cef2a24a1e476211e))
+
 ## [1.1.4](https://github.com/brewcoua/web-som/compare/v1.1.3...v1.1.4) (2024-06-10)
 
 
