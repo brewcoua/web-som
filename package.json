@@ -1,6 +1,6 @@
 {
 	"name": "@brewcoua/web-som",
-	"version": "1.1.3",
+	"version": "1.1.4",
 	"description": "Set-of-Marks script for web grounding, used for web agent automation",
 	"homepage": "https://github.com/brewcoua/web-som#readme",
 	"license": "(MIT OR Apache-2.0)",
