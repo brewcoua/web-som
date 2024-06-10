@@ -6,15 +6,15 @@ import {
 import Filter from '@/domain/Filter';
 import InteractiveElements from '@/domain/InteractiveElements';
 
-import QuadTree, { Rectangle } from './quad';
+import DOMTree, { Rectangle } from './tree';
 import { isVisible } from './utils';
 import VisibilityCanvas from './canvas';
 
 class VisibilityFilter extends Filter {
-	private qt!: QuadTree;
+	private dt!: DOMTree;
 
 	async apply(elements: InteractiveElements): Promise<InteractiveElements> {
-		this.qt = this.mapQuadTree();
+		this.dt = this.buildDOMTree();
 
 		const results = await Promise.all([
 			this.applyScoped(elements.fixed),
@@ -52,36 +52,35 @@ class VisibilityFilter extends Filter {
 		return results.flat();
 	}
 
-	mapQuadTree(): QuadTree {
+	buildDOMTree(): DOMTree {
 		const boundary = new Rectangle(0, 0, window.innerWidth, window.innerHeight);
-		const qt = new QuadTree(boundary, 4);
+		const dt = new DOMTree(boundary);
 
-		// use a tree walker and also filter out invisible elements
+		// Use a tree walker to traverse the DOM tree
 		const walker = document.createTreeWalker(
 			document.body,
-			NodeFilter.SHOW_ELEMENT,
-			{
-				acceptNode: (node) => {
-					const element = node as HTMLElement;
-					if (isVisible(element)) {
-						return NodeFilter.FILTER_ACCEPT;
-					}
-					return NodeFilter.FILTER_REJECT;
-				},
-			}
+			NodeFilter.SHOW_ELEMENT
 		);
+
+		const buf: Rectangle[] = [];
 
 		let currentNode: Node | null = walker.currentNode;
 		while (currentNode) {
 			const element = currentNode as HTMLElement;
-			const rect = element.getBoundingClientRect();
-			qt.insert(
-				new Rectangle(rect.left, rect.top, rect.width, rect.height, element)
-			);
+
+			if (isVisible(element)) {
+				const rect = element.getBoundingClientRect();
+				buf.push(
+					new Rectangle(rect.left, rect.top, rect.width, rect.height, [element])
+				);
+			}
 			currentNode = walker.nextNode();
 		}
 
-		return qt;
+		// Finally, insert all the rectangles into the tree
+		dt.insertAll(buf);
+
+		return dt;
 	}
 
 	async isDeepVisible(element: HTMLElement) {
@@ -108,7 +107,7 @@ class VisibilityFilter extends Filter {
 				// IntersectionObserver only checks intersection with the viewport, not with other elements
 				// Thus, we need to calculate the visible area ratio relative to the intersecting elements
 				const canvas = new VisibilityCanvas(element);
-				const visibleAreaRatio = await canvas.eval(this.qt);
+				const visibleAreaRatio = await canvas.eval(this.dt);
 
 				resolve(visibleAreaRatio >= VISIBILITY_RATIO);
 			});

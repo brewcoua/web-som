@@ -1,4 +1,4 @@
-import QuadTree, { Rectangle } from './quad';
+import QuadTree, { Rectangle } from './tree';
 import { isAbove, isVisible } from './utils';
 
 export default class VisibilityCanvas {
@@ -48,7 +48,6 @@ export default class VisibilityCanvas {
 		if (totalPixels === 0) return 0;
 
 		const elements = this.getIntersectingElements(qt);
-
 		for (const el of elements) {
 			this.drawElement(el, 'black');
 		}
@@ -63,14 +62,21 @@ export default class VisibilityCanvas {
 			this.rect.right,
 			this.rect.width,
 			this.rect.height,
-			this.element
+			[this.element]
 		);
 		const candidates = qt.query(range);
 
+		// Now, for the sake of avoiding completely hidden elements, we do one elementsOnPoint check
+		const elementsFromPoint = document.elementsFromPoint(
+			this.rect.left + this.rect.width / 2,
+			this.rect.top + this.rect.height / 2
+		) as HTMLElement[];
+
 		return candidates
-			.map((candidate) => candidate.element!)
+			.concat(elementsFromPoint)
 			.filter(
-				(el) => el != this.element && isAbove(this.element, el) && isVisible(el)
+				(el, i, arr) =>
+					arr.indexOf(el) === i && isVisible(el) && isAbove(this.element, el)
 			);
 	}
 

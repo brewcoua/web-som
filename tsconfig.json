@@ -1,31 +1,31 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Node",
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ES2022",
+		"moduleResolution": "Bundler",
 
-    "composite": true,
-    "strict": true,
-    "useDefineForClassFields": true,
-    "allowJs": false,
-    "skipLibCheck": false,
-    "esModuleInterop": false,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
+		"composite": true,
+		"strict": true,
+		"useDefineForClassFields": true,
+		"allowJs": false,
+		"skipLibCheck": false,
+		"esModuleInterop": false,
+		"allowSyntheticDefaultImports": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noEmit": true,
 
-    "lib": ["DOM", "ESNext"],
+		"lib": ["DOM", "ESNext"],
 
-    "baseUrl": ".",
-    "outDir": "dist",
-    "rootDir": "src",
+		"baseUrl": ".",
+		"outDir": "dist",
+		"rootDir": "src",
 
-    "paths": {
-      "@/*": ["src/*"]
-    }
-  },
-  "include": ["src/**/*.ts", "types/**/*.d.ts"],
-  "exclude": ["node_modules", "dist"]
+		"paths": {
+			"@/*": ["src/*"]
+		}
+	},
+	"include": ["src/**/*.ts", "types/**/*.d.ts"],
+	"exclude": ["node_modules", "dist"]
 }
