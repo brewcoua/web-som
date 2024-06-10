@@ -32,7 +32,10 @@ Additionally, you can use [unpkg](https://unpkg.com/) to include the script in y
 })();
 ```
 
-### How it works
+Here's also a preview of how it can look on [npm](https://www.npmjs.com/package/@brewcoua/web-som).
+![npm preview](./.github/preview.png)
+
+## How it works
 
 This is a step-by-step guide on how the script works:
 
