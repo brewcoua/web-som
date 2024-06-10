@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/brewcoua/web-som/compare/v1.2.1...v1.2.2) (2024-06-10)
+
+
+### Bug Fixes
+
+* **docs:** add proper preview and remove typos ([3759655](https://github.com/brewcoua/web-som/commit/37596557ee466452cbef124a9c2e61da40c73533))
+
 ## [1.2.1](https://github.com/brewcoua/web-som/compare/v1.2.0...v1.2.1) (2024-06-10)
 
 
