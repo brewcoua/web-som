@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/brewcoua/web-som/compare/v1.2.0...v1.2.1) (2024-06-10)
+
+
+### Bug Fixes
+
+* **visibility:** ignore z-index of common parent ([d531923](https://github.com/brewcoua/web-som/commit/d5319233952cc22cbda55cac786912e4adeb5d27))
+
 # [1.2.0](https://github.com/brewcoua/web-som/compare/v1.1.4...v1.2.0) (2024-06-10)
 
 
