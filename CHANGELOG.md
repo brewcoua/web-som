@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/brewcoua/web-som/compare/v1.1.3...v1.1.4) (2024-06-10)
+
+
+### Bug Fixes
+
+* **style:** set font size in px instead of rem ([9c2af3b](https://github.com/brewcoua/web-som/commit/9c2af3b6e832a0fc71d4d12569c6c249ed4e835f))
+
 ## [1.1.3](https://github.com/brewcoua/web-som/compare/v1.1.2...v1.1.3) (2024-06-09)
 
 
