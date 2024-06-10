@@ -1,32 +1,45 @@
 {
-  "name": "web-som",
-  "version": "1.0.0",
-  "description": "Set-of-Marks script for web grounding, used for web agent automation",
-  "main": "dist/SoM.js",
-  "license": "(MIT OR Apache-2.0)",
-  "author": {
-    "name": "Brewen Couaran",
-    "email": "contact@brewen.dev",
-    "url": "https://brewen.dev"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:brewcoua/web-som.git"
-  },
-  "homepage": "https://github.com/brewcoua/web-som#readme",
-  "bugs": {
-    "url": "https://github.com/brewcoua/web-som/issues",
-    "email": "contact@brewen.dev"
-  },
-  "scripts": {
-    "build": "bun ./build.ts"
-  },
-  "devDependencies": {
-    "@types/contrast-color": "^1.0.3",
-    "clean-css": "^5.3.3",
-    "prettier": "^3.2.5"
-  },
-  "dependencies": {
-    "contrast-color": "^1.0.1"
-  }
+	"name": "@brewcoua/web-som",
+	"version": "1.1.3",
+	"author": {
+		"name": "Brewen Couaran",
+		"email": "contact@brewen.dev",
+		"url": "https://brewen.dev"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+ssh://git@github.com/brewcoua/web-som.git"
+	},
+	"main": "./SoM.min.js",
+	"files": [
+		"SoM.min.js",
+		"SoM.min.js.map",
+		"SoM.js",
+		"SoM.js.map"
+	],
+	"devDependencies": {
+		"@rollup/plugin-terser": "^0.4.4",
+		"@rollup/plugin-typescript": "^11.1.6",
+		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/exec": "^6.0.3",
+		"@semantic-release/git": "^10.0.1",
+		"@semantic-release/npm": "^12.0.1",
+		"conventional-changelog-conventionalcommits": "^8.0.0",
+		"prettier": "^3.2.5",
+		"rollup": "^4.18.0",
+		"rollup-plugin-string": "^3.0.0",
+		"semantic-release": "^24.0.0",
+		"tslib": "^2.6.3",
+		"typescript": "^5.4.5"
+	},
+	"bugs": {
+		"url": "https://github.com/brewcoua/web-som/issues",
+		"email": "contact@brewen.dev"
+	},
+	"description": "Set-of-Marks script for web grounding, used for web agent automation",
+	"homepage": "https://github.com/brewcoua/web-som#readme",
+	"license": "(MIT OR Apache-2.0)",
+	"scripts": {
+		"build": "rollup -c"
+	}
 }

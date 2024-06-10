@@ -50,6 +50,13 @@ export const EDITABLE_SELECTORS = [
 // Required visibility ratio for an element to be considered visible
 export const VISIBILITY_RATIO = 0.6;
 
+// Maximum ratio of the screen that an element can cover to be considered visible (to avoid huge ads)
+export const MAX_COVER_RATIO = 0.8;
+
+// Size of batch for each promise when processing element visibility
+// Lower batch values may increase performance but in some cases, it can block the main thread
+export const ELEMENT_BATCH_SIZE = 10;
+
 // Rate at which elements are sampled for elements on point
 // e.g. 0.1 => Make a grid and check on every point every 10% of the size of the element
 // This is used to make sure that every element that intersects with the element is checked

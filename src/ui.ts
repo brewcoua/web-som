@@ -69,7 +69,6 @@ export default class UI {
         })
         .map((box) => box.color);
 
-      console.groupCollapsed(`Element: ${element.tagName} (${i})`);
       const color = this.colors.contrastColor(element, surroundingColors);
 
       // Set color as variable to be used in CSS

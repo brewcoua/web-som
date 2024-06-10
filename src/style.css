@@ -2,7 +2,7 @@
 	position: fixed;
 	z-index: 2147483646;
 	pointer-events: none;
-	background-color: rgba(var(--SoM-color), 0.45);
+	background-color: rgba(var(--SoM-color), 0.35);
 }
 
 .SoM.editable {
@@ -11,8 +11,8 @@
 		45deg,
 		rgba(var(--SoM-color), 0.15),
 		rgba(var(--SoM-color), 0.15) 10px,
-		rgba(var(--SoM-color), 0.45) 10px,
-		rgba(var(--SoM-color), 0.45) 20px
+		rgba(var(--SoM-color), 0.35) 10px,
+		rgba(var(--SoM-color), 0.35) 20px
 	);
 
 	/* Add an outline to make the element more visible */
