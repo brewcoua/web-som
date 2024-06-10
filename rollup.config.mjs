@@ -18,7 +18,9 @@ export default {
 		},
 	],
 	plugins: [
-		typescript(),
+		typescript({
+			outputToFilesystem: true,
+		}),
 		string({
 			include: '**/*.css',
 			exclude: ['node_modules/**'],
