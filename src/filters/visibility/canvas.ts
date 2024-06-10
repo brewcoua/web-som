@@ -48,6 +48,7 @@ export default class VisibilityCanvas {
 		if (totalPixels === 0) return 0;
 
 		const elements = this.getIntersectingElements(qt);
+
 		for (const el of elements) {
 			this.drawElement(el, 'black');
 		}

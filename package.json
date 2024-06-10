@@ -1,16 +1,6 @@
 {
 	"name": "@brewcoua/web-som",
 	"version": "1.2.0",
-	"description": "Set-of-Marks script for web grounding, used for web agent automation",
-	"homepage": "https://github.com/brewcoua/web-som#readme",
-	"license": "(MIT OR Apache-2.0)",
-	"keywords": [
-		"web",
-		"agent",
-		"automation",
-		"set-of-marks",
-		"som"
-	],
 	"author": {
 		"name": "Brewen Couaran",
 		"email": "contact@brewen.dev",
@@ -21,12 +11,6 @@
 		"url": "git+ssh://git@github.com/brewcoua/web-som.git"
 	},
 	"main": "./SoM.min.js",
-	"files": [
-		"SoM.min.js",
-		"SoM.min.js.map",
-		"SoM.js",
-		"SoM.js.map"
-	],
 	"devDependencies": {
 		"@rollup/plugin-commonjs": "^26.0.1",
 		"@rollup/plugin-node-resolve": "^15.2.3",
@@ -39,6 +23,7 @@
 		"@types/rbush": "^3.0.3",
 		"conventional-changelog-conventionalcommits": "^8.0.0",
 		"prettier": "^3.2.5",
+		"rbush": "^3.0.1",
 		"rollup": "^4.18.0",
 		"rollup-plugin-string": "^3.0.0",
 		"semantic-release": "^24.0.0",
@@ -49,11 +34,24 @@
 		"url": "https://github.com/brewcoua/web-som/issues",
 		"email": "contact@brewen.dev"
 	},
+	"description": "Set-of-Marks script for web grounding, used for web agent automation",
+	"files": [
+		"SoM.min.js",
+		"SoM.min.js.map",
+		"SoM.js",
+		"SoM.js.map"
+	],
+	"homepage": "https://github.com/brewcoua/web-som#readme",
+	"keywords": [
+		"web",
+		"agent",
+		"automation",
+		"set-of-marks",
+		"som"
+	],
+	"license": "(MIT OR Apache-2.0)",
 	"scripts": {
 		"build": "rollup -c",
 		"build:watch": "rollup -c -w"
-	},
-	"dependencies": {
-		"rbush": "^3.0.1"
 	}
 }

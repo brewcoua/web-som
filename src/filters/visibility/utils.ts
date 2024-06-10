@@ -13,11 +13,20 @@ export function isAbove(
 	referenceElement: HTMLElement
 ): boolean {
 	// Helper function to get the effective z-index value
-	function getEffectiveZIndex(element: HTMLElement): number {
+	function getEffectiveZIndex(
+		element: HTMLElement,
+		other: HTMLElement
+	): number {
 		while (element) {
 			const zIndex = window.getComputedStyle(element).zIndex;
 			if (zIndex !== 'auto') {
 				const zIndexValue = parseInt(zIndex, 10);
+
+				// Do not count the z-index of a common parent
+				if (element.contains(other)) {
+					return 0;
+				}
+
 				return isNaN(zIndexValue) ? 0 : zIndexValue;
 			}
 			element = element.parentElement as HTMLElement;
@@ -25,8 +34,8 @@ export function isAbove(
 		return 0;
 	}
 
-	const elementZIndex = getEffectiveZIndex(element);
-	const referenceElementZIndex = getEffectiveZIndex(referenceElement);
+	const elementZIndex = getEffectiveZIndex(element, referenceElement);
+	const referenceElementZIndex = getEffectiveZIndex(referenceElement, element);
 
 	const elementPosition = element.compareDocumentPosition(referenceElement);
 
