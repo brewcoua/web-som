@@ -19,7 +19,7 @@
 	outline: 2px solid rgba(var(--SoM-color), 0.7);
 }
 
-.SoM > label {
+.SoM > .SoM--label {
 	position: absolute;
 	padding: 0 3px;
 	font-size: 16px;
