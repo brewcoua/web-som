@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/brewcoua/web-som/compare/v1.2.3...v1.2.4) (2024-07-08)
+
+
+### Bug Fixes
+
+* **ui:** black contrasted colors breaking luminance ratio ([3cbc93d](https://github.com/brewcoua/web-som/commit/3cbc93dc0bd741950aa06b5e35c183dd310ae205))
+
 ## [1.2.3](https://github.com/brewcoua/web-som/compare/v1.2.2...v1.2.3) (2024-07-01)
 
 
