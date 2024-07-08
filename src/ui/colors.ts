@@ -16,13 +16,13 @@ export default class UIColors {
 		let color: Color;
 		// If there are no colors left, generate a random color
 		if (complimentaryColors.length === 0) {
-			color = Color.fromHSL({
-				h: Math.random(),
-				s: 1, // Always keep the saturation full as we want to avoid plain colors
-				l: Math.random() * (MAX_LUMINANCE - MIN_LUMINANCE) + MIN_LUMINANCE,
-			});
+			color = this.generateColor();
 		} else {
 			color = this.getAverageColor(complimentaryColors);
+		}
+
+		if (color.r === 0 && color.g === 0 && color.b === 0) {
+			color = this.generateColor();
 		}
 
 		// Avoid colors that are too dark or too bright by increasing the luminance
@@ -37,6 +37,14 @@ export default class UIColors {
 		}
 
 		return color;
+	}
+
+	generateColor(): Color {
+		return Color.fromHSL({
+			h: Math.random(),
+			s: 1, // Always keep the saturation full as we want to avoid plain colors
+			l: Math.random() * (MAX_LUMINANCE - MIN_LUMINANCE) + MIN_LUMINANCE,
+		});
 	}
 
 	getAverageColor(colors: Color[]): Color {
@@ -193,6 +201,10 @@ export class Color {
 		// Lower or increase the ratio of each color to match the desired luminance
 		// We want to keep the same overall color (i.e. green stays green, red stays red, etc.)
 		const l = this.luminance();
+		if (l === 0) {
+			return new Color(0, 0, 0, this.a);
+		}
+
 		const ratio = luminance / l;
 
 		const r = Math.min(255, this.r * ratio);

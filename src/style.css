@@ -1,3 +1,7 @@
+som-wrapper {
+	all: unset !important;
+}
+
 .SoM {
 	position: fixed;
 	z-index: 2147483646;

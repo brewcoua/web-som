@@ -14,6 +14,12 @@ export default class UI {
 	private readonly colors = new UIColors();
 
 	display(elements: HTMLElement[]) {
+		let wrapper = document.querySelector('som-wrapper');
+		if (!wrapper) {
+			wrapper = document.createElement('som-wrapper');
+			document.body.appendChild(wrapper);
+		}
+
 		const labels: SimpleDOMRect[] = [];
 		const boundingBoxes: (SimpleDOMRect & {
 			color: Color;
@@ -77,7 +83,7 @@ export default class UI {
 				`${color.r}, ${color.g}, ${color.b}`
 			);
 
-			document.body.appendChild(box);
+			wrapper.appendChild(box);
 
 			boundingBoxes.push({
 				top: rect.top,
